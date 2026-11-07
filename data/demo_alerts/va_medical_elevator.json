@@ -1,0 +1,49 @@
+{
+  "alert": {
+    "id": "c_alert_va_elev",
+    "alert": {
+      "informed_entity": [
+        {
+          "stop_id": "77780"
+        }
+      ],
+      "header_text": {
+        "translation": [
+          {
+            "text": "Elevator out at VA Medical Center Station"
+          }
+        ]
+      },
+      "description_text": {
+        "translation": [
+          {
+            "text": "VA Medical Center Station elevator out of service. Riders needing an elevator please use UC San Diego Health La Jolla Station."
+          }
+        ]
+      }
+    }
+  },
+  "alternative_stop_id": "77784",
+  "closure": {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -117.22982,
+        32.87425
+      ]
+    },
+    "properties": {
+      "id": "c_alert_va_elev",
+      "kind": "elevator_outage",
+      "severity": "blocking",
+      "title": "Elevator out at VA Medical Center Station",
+      "description": "The elevator at VA Medical Center Station is out of service.",
+      "alternative": "Use UCSD Health La Jolla Station",
+      "stop_id": "77780",
+      "source": "mts_alerts",
+      "raw_text": "VA Medical Center Station elevator out of service. Riders needing an elevator please use UC San Diego Health La Jolla Station.",
+      "ai_generated": true
+    }
+  }
+}

@@ -38,7 +38,11 @@ export default function SearchPanel(props: Props) {
   const { settings, onChange, from, to, onFrom, onTo, via, onVia, pickMode, onPickMode, onSubmit, loading } = props;
   const canSubmit = !loading && !!from && !!to;
   const togglePick = (m: Exclude<PickMode, null>) => onPickMode(pickMode === m ? null : m);
-  const pickLabel = pickMode === "from" ? "start" : pickMode === "to" ? "destination" : `stop ${(pickMode as number) + 1}`;
+  const pickLabel = pickMode === "from" ? "the start" : pickMode === "to" ? "the destination" : `stop ${(pickMode as number) + 1}`;
+  /** a typed/picked place fills the field, so stop waiting for a map click on it */
+  const filled = (field: Exclude<PickMode, null>) => {
+    if (pickMode === field) onPickMode(null);
+  };
   const preset = GRADE_PRESETS.find((p) => Math.abs(settings.maxGrade - p.value) < 1e-4);
 
   return (
@@ -54,7 +58,7 @@ export default function SearchPanel(props: Props) {
         <div className="endpoint-fields">
           <div className="endpoint-row">
             <span className="rail-dot rail-start" aria-hidden="true" />
-            <PlaceInput label="Start" value={from} onChange={onFrom} picking={pickMode === "from"} onPickOnMap={() => togglePick("from")} />
+            <PlaceInput label="Start" value={from} onChange={(e) => { onFrom(e); filled("from"); }} picking={pickMode === "from"} onPickOnMap={() => togglePick("from")} />
           </div>
           {via.map((v, i) => (
             <div className="endpoint-row" key={i}>
@@ -62,7 +66,10 @@ export default function SearchPanel(props: Props) {
               <PlaceInput
                 label={`Stop ${i + 1}`}
                 value={v}
-                onChange={(e) => onVia(via.map((x, j) => (j === i ? e : x)))}
+                onChange={(e) => {
+                  onVia(via.map((x, j) => (j === i ? e : x)));
+                  filled(i);
+                }}
                 picking={pickMode === i}
                 onPickOnMap={() => togglePick(i)}
                 onRemove={() => {
@@ -74,7 +81,7 @@ export default function SearchPanel(props: Props) {
           ))}
           <div className="endpoint-row">
             <span className="rail-dot rail-end" aria-hidden="true" />
-            <PlaceInput label="Destination" value={to} onChange={onTo} picking={pickMode === "to"} onPickOnMap={() => togglePick("to")} />
+            <PlaceInput label="Destination" value={to} onChange={(e) => { onTo(e); filled("to"); }} picking={pickMode === "to"} onPickOnMap={() => togglePick("to")} />
           </div>
           {via.length < MAX_STOPS && (
             <button
@@ -105,7 +112,7 @@ export default function SearchPanel(props: Props) {
       </fieldset>
       {pickMode && (
         <p className="hint picking" role="status">
-          Click the map to set the {pickLabel}, or type a place. Press Esc to cancel.
+          Click the map to set {pickLabel}, or type a place. Press Esc to cancel.
         </p>
       )}
 

@@ -8,6 +8,7 @@
     "dev:live": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "test": "npm --prefix frontend test",
-    "dev:fixtures": "npm --prefix frontend run dev:fixtures"
+    "dev:fixtures": "npm --prefix frontend run dev:fixtures",
+    "demo": "npm --prefix frontend run demo"
   }
 }

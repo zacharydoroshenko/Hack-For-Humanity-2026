@@ -123,3 +123,9 @@ export const IconPlus = (p: P) => (
     <path d="M12 5v14M5 12h14" />
   </svg>
 );
+
+export const IconCheck = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
+  </svg>
+);

@@ -22,7 +22,8 @@ import { markerIcon } from "./mapMarkers";
 const CENTER: [number, number] = [32.815, -117.212];
 /** San Diego County (Oceanside/Fallbrook to the border, coast to Imperial County line) */
 const SD_COUNTY_BOUNDS = L.latLngBounds([32.52, -117.65], [33.52, -116.05]);
-const NEAR_ROUTE_M = 350;
+const NEAR_ROUTE_M = 350; // MTS closures, steep streets
+const NEAR_ROLL_M = 120; // curb ramps and sidewalk reports: only the ones right next to a rolling leg
 
 // ───────── geometry helpers (approximate, fine at city scale) ─────────
 const M_PER_DEG_LAT = 111_320;
@@ -75,6 +76,8 @@ interface Props {
   /** Other route options, drawn faintly; click to select */
   alternatives: { index: number; option: RouteOption }[];
   onSelectAlternative: (index: number) => void;
+  /** parts of the usual route an outage blocked (drawn red, dashed) */
+  blocked: { paths: LngLat[][]; because: string } | null;
   via: (Endpoint | null)[];
   from: Endpoint | null;
   to: Endpoint | null;
@@ -84,7 +87,7 @@ interface Props {
   showAll: boolean;
 }
 
-export default function MapView({ layers, route, alternatives, onSelectAlternative, via, from, to, pickMode, onPick, focusedLeg, showAll }: Props) {
+export default function MapView({ layers, route, alternatives, onSelectAlternative, blocked, via, from, to, pickMode, onPick, focusedLeg, showAll }: Props) {
   /** Only what matters for the current route; everything when showAll is on. */
   const visible = useMemo(() => {
     const stops = layers?.stops.features ?? [];
@@ -111,8 +114,13 @@ export default function MapView({ layers, route, alternatives, onSelectAlternati
     const vStops: StopFeature[] = stops.filter((s) =>
       route ? routeStopIds.has(s.properties.stop_id) || (hasTransit && s.properties.is_blue_line && s.properties.active_closure_ids.length > 0) : s.properties.is_blue_line,
     );
-    const vClosures = closures.filter((c) => isOutage(c) || allLines.some((l) => nearLine(firstPoint(c), l, NEAR_ROUTE_M)));
-    const vRamps: CurbRampFeature[] = ramps.filter((r) => walkLines.some((l) => nearLine(r.geometry.coordinates, l, NEAR_ROUTE_M)));
+    const vClosures = closures.filter((c) => {
+      if (isOutage(c)) return true;
+      if (c.properties.kind === "reported_hazard") return walkLines.some((l) => nearLine(firstPoint(c), l, NEAR_ROLL_M));
+      const pts = c.geometry.type === "LineString" ? c.geometry.coordinates : [c.geometry.coordinates];
+      return allLines.some((l) => pts.some((p) => nearLine(p, l, NEAR_ROUTE_M)));
+    });
+    const vRamps: CurbRampFeature[] = ramps.filter((r) => walkLines.some((l) => nearLine(r.geometry.coordinates, l, NEAR_ROLL_M)));
     return { stops: vStops, closures: vClosures, ramps: vRamps, routeStopIds };
   }, [layers, route, showAll]);
 
@@ -165,6 +173,16 @@ export default function MapView({ layers, route, alternatives, onSelectAlternati
         </Polyline>
       ))}
 
+      {blocked?.paths.map((path, i) => (
+        <Polyline
+          key={`blocked-${i}`}
+          positions={path.map(toLatLng)}
+          pathOptions={{ color: "#b91c1c", weight: 5, opacity: 0.75, dashArray: "4 10", lineCap: "round" }}
+        >
+          <Tooltip sticky>Usual route, blocked: {blocked.because}</Tooltip>
+        </Polyline>
+      ))}
+
       {routeLines}
 
       {visible.stops.map((f) => {
@@ -208,8 +226,8 @@ export default function MapView({ layers, route, alternatives, onSelectAlternati
             <Marker
               key={p.id}
               position={toLatLng(f.geometry.coordinates)}
-              icon={markerIcon(p.severity === "blocking" ? "outage" : "warning")}
-              zIndexOffset={1000}
+              icon={markerIcon(p.severity === "blocking" ? "outage" : p.kind === "reported_hazard" ? "report" : "warning")}
+              zIndexOffset={p.kind === "reported_hazard" ? 0 : 1000}
             >
               <Tooltip direction="top" offset={[0, -14]}>{p.title}</Tooltip>
               {popup}

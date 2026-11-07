@@ -113,6 +113,9 @@ class Reroute(Strict):
     cause_closure_ids: list[str]
     explanation: list[str]
     ai_generated: bool
+    # the route without these outages, so the UI can show what was blocked (optional)
+    previous_legs: list[Leg] | None = None
+    previous_summary: Summary | None = None
 
 
 class Summary(Strict):
@@ -126,6 +129,9 @@ class RouteOption(Strict):
     label: str  # e.g. "Fastest", "Least rolling"
     summary: Summary
     legs: list[Leg]
+    avoided_closure_ids: list[str] = []  # active outages the usual route hits and this option avoids
+    recommended: bool = False  # the option SafeRoute suggests (at most one); not always the fastest
+    recommended_reason: str | None = None
 
 
 class PlanResponse(Strict):

@@ -1,0 +1,49 @@
+{
+  "alert": {
+    "id": "c_alert_santa_fe",
+    "alert": {
+      "informed_entity": [
+        {
+          "stop_id": "75083"
+        }
+      ],
+      "header_text": {
+        "translation": [
+          {
+            "text": "Santa Fe Depot trolley platform closed"
+          }
+        ]
+      },
+      "description_text": {
+        "translation": [
+          {
+            "text": "Santa Fe Depot: Blue Line platform closed for track work today. Riders please use County Center/Little Italy Station."
+          }
+        ]
+      }
+    }
+  },
+  "alternative_stop_id": "75080",
+  "closure": {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -117.16978,
+        32.71732
+      ]
+    },
+    "properties": {
+      "id": "c_alert_santa_fe",
+      "kind": "stop_closure",
+      "severity": "blocking",
+      "title": "Santa Fe Depot trolley platform closed",
+      "description": "Blue Line platform at Santa Fe Depot closed for track work.",
+      "alternative": "Use County Center/Little Italy Station",
+      "stop_id": "75083",
+      "source": "mts_alerts",
+      "raw_text": "Santa Fe Depot: Blue Line platform closed for track work today. Riders please use County Center/Little Italy Station.",
+      "ai_generated": true
+    }
+  }
+}

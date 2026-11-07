@@ -17,7 +17,7 @@
       "description_text": {
         "translation": [
           {
-            "text": "ELEVATOR OUTAGE: Old Town Transit Center elevator is temporarily out of service. Customers requiring elevator access should use Washington St Station. We apologize for the inconvenience. (dummy alert)"
+            "text": "ELEVATOR OUTAGE: Old Town Transit Center elevator is temporarily out of service. Customers requiring elevator access should use Washington St Station."
           }
         ]
       }
@@ -42,7 +42,7 @@
       "alternative": "Use Washington Street Station",
       "stop_id": "75042",
       "source": "mts_alerts",
-      "raw_text": "ELEVATOR OUTAGE: Old Town Transit Center elevator is temporarily out of service. Customers requiring elevator access should use Washington St Station. We apologize for the inconvenience. (dummy alert)",
+      "raw_text": "ELEVATOR OUTAGE: Old Town Transit Center elevator is temporarily out of service. Customers requiring elevator access should use Washington St Station.",
       "ai_generated": true
     }
   }

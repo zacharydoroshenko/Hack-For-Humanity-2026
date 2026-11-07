@@ -273,7 +273,9 @@
             }
           ]
         }
-      ]
+      ],
+      "recommended": true,
+      "recommended_reason": "Fastest, with no outages or construction on the way"
     },
     {
       "id": "opt_level",

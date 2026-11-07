@@ -13,32 +13,33 @@ import {
   type PlanResponse,
   type RouteOption,
 } from "./api/client";
-import { DEMO_ALERT_OPTIONS, HAPPY_PATH, PLACES, type Endpoint } from "./demoConfig";
+import { DEMO_ALERT_OPTIONS, PLACES, type Endpoint } from "./demoConfig";
 import logoUrl from "./assets/logo.svg";
 import MapView from "./components/MapView";
 import SearchPanel, { type PickMode, type SearchSettings } from "./components/SearchPanel";
 import DirectionsList from "./components/DirectionsList";
 import RerouteBanner from "./components/RerouteBanner";
 import RouteOptions from "./components/RouteOptions";
-import DemoControls from "./components/DemoControls";
+import { reverseGeocode } from "./geo/services";
+import { changedLegIndices, droppedPaths, outageName } from "./reroute";
 import AlertToast from "./components/AlertToast";
 import Legend from "./components/Legend";
 import { IconAlert } from "./components/Icons";
 
 const DEMO_MODE = usingFixtures || new URLSearchParams(location.search).has("demo");
-const DEFAULT_SETTINGS: SearchSettings = { maxGrade: HAPPY_PATH.maxGrade, avoidUnverified: false, showAllMapDetails: false };
+const DEFAULT_SETTINGS: SearchSettings = { maxGrade: 0.05, avoidUnverified: false, showAllMapDetails: false };
 
 function nearestPlaceLabel(p: LngLat): string {
   const near = PLACES.find((x) => Math.hypot(x.coord[0] - p[0], x.coord[1] - p[1]) < 0.0015);
-  return near?.name ?? `Dropped pin (${p[1].toFixed(4)}, ${p[0].toFixed(4)})`;
+  return near?.name ?? "Dropped pin";
 }
 
 export default function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [layers, setLayers] = useState<LayersResponse | null>(null);
   const [route, setRoute] = useState<PlanResponse | null>(null);
-  const [from, setFrom] = useState<Endpoint | null>(HAPPY_PATH.from);
-  const [to, setTo] = useState<Endpoint | null>(HAPPY_PATH.to);
+  const [from, setFrom] = useState<Endpoint | null>(null);
+  const [to, setTo] = useState<Endpoint | null>(null);
   const [via, setVia] = useState<(Endpoint | null)[]>([]);
   const [selectedOption, setSelectedOption] = useState(0);
   const [settings, setSettings] = useState<SearchSettings>(DEFAULT_SETTINGS);
@@ -60,7 +61,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    refreshLayers();
+    // Demo mode: every page load starts clean, so a refresh puts the demo back at the beginning
+    // (clears alerts replayed earlier, including on the backend in `npm run demo`).
+    (DEMO_MODE ? resetDemo().catch(() => undefined) : Promise.resolve()).then(refreshLayers);
     getHealth().then(setHealth).catch(() => setHealth({ ok: false, gemini: false }));
   }, [refreshLayers]);
 
@@ -73,16 +76,20 @@ export default function App() {
     setFocusedLeg(null);
     try {
       const stops = via.filter((v): v is Endpoint => v !== null).map((v) => v.coord);
-      setRoute(
-        await plan({
+      const r = await plan({
           from: from.coord,
           to: to.coord,
           ...(stops.length ? { via: stops } : {}),
           max_grade: settings.maxGrade,
           avoid_unverified: settings.avoidUnverified,
-        }),
-      );
-      setSelectedOption(0);
+        });
+      // keep the user's chosen option (matched by label) when the route is replanned, e.g. after an alert
+      const prevLabel = selectedLabelRef.current;
+      // ...unless an alert rerouted the trip: then show the recommended route the banner explains
+      const keep = prevLabel && !r.rerouted ? (r.options ?? []).findIndex((o) => o.label === prevLabel) : -1;
+      setRoute(r);
+      const recommended = (r.options ?? []).findIndex((o) => o.recommended);
+      setSelectedOption(keep >= 0 ? keep : Math.max(0, recommended));
     } catch (e) {
       setError(String(e).replace(/^Error: /, ""));
     } finally {
@@ -90,11 +97,21 @@ export default function App() {
     }
   }, [from, to, via, settings.maxGrade, settings.avoidUnverified]);
 
+  const selectedLabelRef = useRef<string | null>(null);
   const runPlanRef = useRef(runPlan);
   runPlanRef.current = runPlan;
 
   const onPick = (which: Exclude<PickMode, null>, p: LngLat) => {
     const ep = { coord: p, label: nearestPlaceLabel(p) };
+    // replace the placeholder label with the real address once it's known
+    reverseGeocode(p).then((name) => {
+      if (!name) return;
+      const named = { coord: p, label: name };
+      const same = (e: Endpoint | null) => (e && e.coord === p ? named : e);
+      if (which === "from") setFrom(same);
+      else if (which === "to") setTo(same);
+      else setVia((v) => v.map(same));
+    });
     if (which === "from") setFrom(ep);
     else if (which === "to") setTo(ep);
     else setVia((v) => v.map((x, i) => (i === which ? ep : x)));
@@ -108,6 +125,15 @@ export default function App() {
       : [{ id: "only", label: "Recommended", summary: route.summary, legs: route.legs }]
     : [];
   const selected = options[selectedOption] ?? options[0] ?? null;
+  selectedLabelRef.current = selected?.label ?? null;
+  // what the outage changed, for the banner, directions and map
+  const closuresNow = layers?.closures.features ?? [];
+  const causes = route?.rerouted && route.reroute ? closuresNow.filter((c) => route.reroute!.cause_closure_ids.includes(c.properties.id)) : [];
+  const because = causes.length ? causes.map(outageName).join(" + ") : null;
+  const prevLegs = route?.rerouted ? route.reroute?.previous_legs : undefined;
+  const changed = selected ? changedLegIndices(selected.legs, prevLegs) : new Set<number>();
+  const blocked = selected && prevLegs && because ? { paths: droppedPaths(selected.legs, prevLegs), because } : null;
+
   const selectOption = (i: number) => {
     setSelectedOption(i);
     setFocusedLeg(null);
@@ -128,23 +154,9 @@ export default function App() {
     }
   };
 
-  const reset = async () => {
-    await resetDemo();
-    setToast(null);
-    setRoute(null);
-    setFocusedLeg(null);
-    setFrom(HAPPY_PATH.from);
-    setTo(HAPPY_PATH.to);
-    setVia([]);
-    setSelectedOption(0);
-    setSettings(DEFAULT_SETTINGS);
-    await refreshLayers();
-  };
-
-  // ── demo hotkeys: 1/2/3 replay alerts, 0 reset, P plan, D toggle demo panel, Esc cancel map pick ──
-  const [showDemo, setShowDemo] = useState(false);
-  const hotkeyActions = useRef({ simulate, reset, plan: runPlan });
-  hotkeyActions.current = { simulate, reset, plan: runPlan };
+  // ── live-event hotkeys (1-9): each replays a simulated alert. Esc cancels picking a point on the map. ──
+  const simulateRef = useRef(simulate);
+  simulateRef.current = simulate;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -152,28 +164,17 @@ export default function App() {
       const t = e.target as HTMLElement | null;
       const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
       if (!DEMO_MODE || typing || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
-      const a = hotkeyActions.current;
-      const k = e.key.toLowerCase();
-      const idx = ["1", "2", "3"].indexOf(k);
-      if (idx >= 0 && DEMO_ALERT_OPTIONS[idx]) a.simulate(DEMO_ALERT_OPTIONS[idx].file);
-      else if (k === "0") a.reset();
-      else if (k === "p") a.plan();
-      else if (k === "d") setShowDemo((v) => !v);
-      else return;
+      const idx = /^[1-9]$/.test(e.key) ? Number(e.key) - 1 : -1;
+      if (idx < 0 || !DEMO_ALERT_OPTIONS[idx]) return;
       e.preventDefault();
+      simulateRef.current(DEMO_ALERT_OPTIONS[idx].file);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const activeOutages = layers?.closures.features.filter((c) => c.properties.source === "mts_alerts") ?? [];
-  const statusText = usingFixtures
-    ? "Demo data"
-    : health == null
-      ? "Connecting…"
-      : health.ok
-        ? "Live"
-        : "Backend offline";
+  const activeOutages = layers?.closures.features.filter((c) => c.properties.source === "mts_alerts" && c.properties.severity === "blocking") ?? [];
+  const statusText = health == null ? "Connecting…" : health.ok ? "Live" : "Backend offline";
 
   return (
     <div className="app">
@@ -181,7 +182,7 @@ export default function App() {
       <aside className="panel" id="planner" aria-label="Trip planner">
         <header className="app-header">
           <img src={logoUrl} alt="SafeRoute" className="logo" />
-          <span className={`status-pill ${usingFixtures ? "demo" : health?.ok ? "ok" : "down"}`}>{statusText}</span>
+          {!usingFixtures && <span className={`status-pill ${health?.ok ? "ok" : "down"}`}>{statusText}</span>}
         </header>
         <p className="tagline">Accessible trips in San Diego that reroute around elevator outages.</p>
 
@@ -208,10 +209,18 @@ export default function App() {
 
         {error && <p role="alert" className="error">{error}</p>}
 
-        {route?.rerouted && route.reroute && <RerouteBanner reroute={route.reroute} closures={layers?.closures.features ?? []} />}
-        {route && <RouteOptions options={options} selected={selectedOption} onSelect={selectOption} />}
+        {route?.rerouted && route.reroute && selected && (
+          <RerouteBanner reroute={route.reroute} closures={closuresNow} legs={selected.legs} duration_min={selected.summary.duration_min} />
+        )}
+        {route && <RouteOptions options={options} selected={selectedOption} onSelect={selectOption} closures={closuresNow} />}
         {route && selected && (
-          <DirectionsList route={{ ...route, summary: selected.summary, legs: selected.legs }} focusedLeg={focusedLeg} onFocusLeg={setFocusedLeg} />
+          <DirectionsList
+            route={{ ...route, summary: selected.summary, legs: selected.legs }}
+            focusedLeg={focusedLeg}
+            onFocusLeg={setFocusedLeg}
+            changedLegs={changed}
+            changedBecause={because}
+          />
         )}
         {!hasResults && !loading && (
           <p className="empty-state">
@@ -220,7 +229,6 @@ export default function App() {
           </p>
         )}
 
-        {DEMO_MODE && showDemo && <DemoControls onSimulate={simulate} onReset={reset} busy={alertBusy} />}
       </aside>
 
       <main className="map-wrap" aria-label="Map">
@@ -229,6 +237,7 @@ export default function App() {
           route={selected}
           alternatives={options.map((option, index) => ({ index, option })).filter((a) => a.index !== selectedOption)}
           onSelectAlternative={selectOption}
+          blocked={blocked}
           via={via}
           from={from}
           to={to}
@@ -241,7 +250,7 @@ export default function App() {
         <AlertToast closure={toast} onClose={() => setToast(null)} />
         {(loading || alertBusy) && (
           <div className="map-busy" role="status">
-            {alertBusy ? "Reading the MTS alert…" : "Finding an accessible route…"}
+            {alertBusy ? "Reading a new live alert…" : "Finding an accessible route…"}
           </div>
         )}
       </main>

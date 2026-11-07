@@ -24,3 +24,11 @@ export const HAPPY_PATH = {
   to: place("Old Town State Historic Park"),
   maxGrade: 0.04, // manual chair
 };
+
+/** The DEMO.md trip: Price Center Theater -> Old Town -> Balboa Park -> USS Midway, manual chair. */
+export const DEMO_TRIP = {
+  from: place("Price Center Theater"),
+  via: [place("Old Town State Historic Park"), place("Balboa Park (Laurel St entrance)")],
+  to: place("USS Midway Museum"),
+  maxGrade: 0.04,
+};

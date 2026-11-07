@@ -22,11 +22,13 @@ export default function Legend() {
           <Item svg={MARKER_SVG.end} label="Destination" />
           <Item svg={MARKER_SVG.station} label="Trolley station" />
           <Item svg={MARKER_SVG.outage} label="Elevator outage / closure" />
-          <Item svg={MARKER_SVG.warning} label="Steep or reported hazard" />
+          <Item svg={MARKER_SVG.warning} label="Construction (MTS)" />
+          <Item svg={MARKER_SVG.report} label="Sidewalk report (Get It Done)" />
+          <li><span className="legend-line steep" /> Steep street (USGS)</li>
           <Item svg={MARKER_SVG.ramp} label="Curb ramp issue" />
           <li><span className="legend-line walk" /> Rolling</li>
           <li><span className="legend-line trolley" /> Blue Line trolley</li>
-          <li><span className="legend-line car" /> Car / rideshare</li>
+          <li><span className="legend-line blocked" /> Usual route, blocked by an outage</li>
         </ul>
       )}
     </section>

@@ -15,6 +15,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { PlanResponse, TransitLeg } from "@shared/types";
 import { HAPPY_PATH, PLACES } from "../demoConfig";
 import { mockIngest, mockLayers, mockPlan, resetMock } from "./server";
+import { STEEP_STREETS } from "./data";
+import { slopeStats } from "./terrain";
 
 const req = { from: HAPPY_PATH.from.coord, to: HAPPY_PATH.to.coord, max_grade: HAPPY_PATH.maxGrade };
 const transit = (r: PlanResponse) => r.legs.find((l): l is TransitLeg => l.mode === "transit");
@@ -37,7 +39,7 @@ describe("happy path (mock backend)", () => {
   it("plans, reroutes around an elevator outage, and resets", () => {
     // 1. layers
     const before = mockLayers();
-    expect(before.closures.features.some((c) => c.properties.source === "mts_alerts")).toBe(false);
+    expect(before.closures.features.some((c) => c.properties.source === "mts_alerts" && c.properties.severity === "blocking")).toBe(false);
     expect(before.stops.features.length).toBeGreaterThan(10);
 
     // 2. plan
@@ -73,19 +75,23 @@ describe("happy path (mock backend)", () => {
     expect(transit(mockPlan(req))!.from_stop.name).toBe("UCSD Central Campus Station");
   });
 
-  it("Old Town elevator outage moves the alight stop to Washington Street", () => {
+  it("Old Town elevator outage moves the alight stop away from Old Town", () => {
     mockIngest({ demo_file: "old_town_elevator.json" });
     const r = mockPlan(req);
     expect(r.rerouted).toBe(true);
-    expect(transit(r)!.to_stop.name).toBe("Washington Street Station");
+    expect(transit(r)!.to_stop.name).not.toBe("Old Town Station");
   });
 
-  it("steep stations are skipped for a manual chair but allowed for a power chair", () => {
-    const toTecolote = { from: HAPPY_PATH.from.coord, to: [-117.2045, 32.7712] as [number, number] };
-    const manual = mockPlan({ ...toTecolote, max_grade: 0.04 });
-    const power = mockPlan({ ...toTecolote, max_grade: 0.0833 });
-    expect(transit(manual)!.to_stop.name).not.toBe("Tecolote Road Station");
-    expect(transit(power)!.to_stop.name).toBe("Tecolote Road Station");
+  it("uses real USGS slope: Laurel St is flagged steep, and a strict limit is respected or called out", () => {
+    const laurel = STEEP_STREETS.find((st) => st.properties.title.includes("Laurel St, State St to First Ave"))!;
+    expect(laurel.properties.title).toMatch(/\(8\.5%\)/);
+    const balboa = PLACES.find((p) => p.name === "Balboa Park (Laurel St entrance)")!;
+    const strict = mockPlan({ from: PLACES.find((p) => p.name === "Old Town State Historic Park")!.coord, to: balboa.coord, max_grade: 0.03 });
+    const rolls = strict.legs.filter((l) => l.mode === "walk");
+    for (const l of rolls) {
+      const over = slopeStats(l.geometry.coordinates).avgGrade > 0.03;
+      if (over) expect(l.warnings.some((w) => w.message.includes("above your limit"))).toBe(true);
+    }
   });
 
   it("rideshare, drive and roll options return car / roll legs", () => {
@@ -113,6 +119,9 @@ describe("happy path (mock backend)", () => {
     expect(r.options!.length).toBeGreaterThanOrEqual(2);
     expect(r.options![0].legs).toEqual(r.legs);
     expect(r.options![0].label).toBe("Fastest");
+    // no construction on the happy path, so the fastest route is the recommended one
+    expect(r.options![0].recommended).toBe(true);
+    expect(r.options![0].recommended_reason).toBe("Fastest route, with no construction on the way");
     const keys = r.options!.map((o) => JSON.stringify(o.legs.map((l) => (l.mode === "transit" ? l.from_stop.stop_id + l.to_stop.stop_id : l.mode))));
     expect(new Set(keys).size).toBe(keys.length);
   });

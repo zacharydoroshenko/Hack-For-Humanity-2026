@@ -114,6 +114,9 @@ export interface Reroute {
   cause_closure_ids: string[];
   explanation: string[];
   ai_generated: boolean;
+  /** The route the rider would have taken without these outages (optional), so the UI can show what was blocked. */
+  previous_legs?: Leg[];
+  previous_summary?: { duration_min: number; walk_m: number; transfers: number };
 }
 
 /** One candidate route. */
@@ -127,6 +130,12 @@ export interface RouteOption {
     transfers: number;
   };
   legs: Leg[];
+  /** Active outage/closure ids (see /layers closures) that the usual route hits and this option avoids. */
+  avoided_closure_ids?: string[];
+  /** The option SafeRoute suggests (at most one). Not always the fastest. */
+  recommended?: boolean;
+  /** Why it's recommended, e.g. "Passes 1 fewer construction zone; 12 min slower". */
+  recommended_reason?: string | null;
 }
 
 export interface PlanResponse {

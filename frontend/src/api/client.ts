@@ -16,11 +16,14 @@ import type {
   PlanRequest,
   PlanResponse,
 } from "@shared/types";
-import { mockIngest, mockLayers, mockPlan, resetMock } from "../mock/server";
+import { mockIngest, mockIngestClosure, mockLayers, mockPlan, resetMock, setRealPath, takeWantedPaths } from "../mock/server";
+import { fetchWheelchairPath } from "../geo/services";
 
 export type * from "@shared/types";
 
 const USE_FIXTURES = import.meta.env.VITE_USE_FIXTURES === "1";
+/** Demo hybrid: mock routing, but alerts go through the real backend (Gemini). Falls back to the mock. */
+const LIVE_ALERTS = USE_FIXTURES && import.meta.env.VITE_LIVE_ALERTS === "1";
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8000";
 
 /** GeoJSON [lon, lat] -> Leaflet [lat, lon] */
@@ -58,6 +61,38 @@ const later = <T,>(fn: () => T, ms = 350) =>
     }, ms),
   );
 
+/**
+ * In-browser planner with real rolling paths: plan once to learn which rolling legs are needed, fetch their
+ * wheelchair paths (Valhalla, in parallel, cached), then plan again on the real paths. Anything the router
+ * can't answer within a few seconds keeps the simple placeholder line.
+ */
+async function planWithRealPaths(req: PlanRequest): Promise<PlanResponse> {
+  for (let pass = 0; pass < 3; pass++) {
+    const r = mockPlan(req);
+    const wanted = takeWantedPaths();
+    if (!wanted.length) return r;
+    await mapLimit(wanted, 4, async ([a, b]) => {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6000);
+      try {
+        setRealPath(a, b, await fetchWheelchairPath(a, b, ctrl.signal));
+      } catch {
+        setRealPath(a, b, null);
+      } finally {
+        clearTimeout(timer);
+      }
+    });
+  }
+  return mockPlan(req);
+}
+
+async function mapLimit<T>(items: T[], limit: number, fn: (t: T) => Promise<void>): Promise<void> {
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) await fn(items[i++]);
+  }));
+}
+
 // ── public API ──
 
 export async function getHealth(): Promise<HealthResponse> {
@@ -71,19 +106,30 @@ export async function getLayers(): Promise<LayersResponse> {
 }
 
 export async function plan(req: PlanRequest): Promise<PlanResponse> {
-  if (USE_FIXTURES) return later(() => mockPlan(req), 700);
+  if (USE_FIXTURES) return planWithRealPaths(req);
   return http("POST", "/plan", req);
 }
 
 export async function ingestAlert(req: AlertIngestRequest): Promise<AlertIngestResponse> {
+  if (LIVE_ALERTS) {
+    try {
+      const live = await http<AlertIngestResponse>("POST", "/alerts/ingest", req);
+      mockIngestClosure(live.closure, req.demo_file);
+      return live;
+    } catch (e) {
+      console.warn("[SafeRoute] live alert ingest failed; using the mock instead.", e);
+    }
+  }
   if (USE_FIXTURES) return later(() => mockIngest(req), 900);
   return http("POST", "/alerts/ingest", req);
 }
 
 /** Demo-only helper; not part of the frozen contract. */
 export async function resetDemo(): Promise<void> {
+  if (LIVE_ALERTS) await http("POST", "/demo/reset").catch(() => undefined);
   if (USE_FIXTURES) return later(resetMock, 50);
   await http("POST", "/demo/reset");
 }
 
 export const usingFixtures = USE_FIXTURES;
+export const usingLiveAlerts = LIVE_ALERTS;

@@ -8,7 +8,13 @@ interface Props {
   onClose: () => void;
 }
 
-/** Pops up when a new MTS alert is ingested. */
+const KICKER: Record<string, string> = {
+  mts_alerts: "New MTS alert",
+  get_it_done: "New sidewalk report",
+  city_ada: "New curb ramp report",
+};
+
+/** Pops up when a live alert arrives (MTS outage, sidewalk report, curb ramp report). */
 export default function AlertToast({ closure, onClose }: Props) {
   useEffect(() => {
     if (!closure) return;
@@ -22,7 +28,7 @@ export default function AlertToast({ closure, onClose }: Props) {
         <div className="toast">
           <div className="toast-head">
             <span className="toast-kicker">
-              <IconAlert size={18} /> New MTS alert
+              <IconAlert size={18} /> {KICKER[closure.properties.source] ?? "New alert"}
             </span>
             <button type="button" className="close-btn" onClick={onClose} aria-label="Dismiss alert">
               <IconClose size={18} />
@@ -30,7 +36,9 @@ export default function AlertToast({ closure, onClose }: Props) {
           </div>
           <p className="toast-title">{closure.properties.title}</p>
           {closure.properties.alternative && <p>Suggested: {closure.properties.alternative}</p>}
-          {closure.properties.ai_generated && <AiChip source={closure.properties.raw_text} sourceLabel="Original MTS alert" />}
+          {closure.properties.ai_generated && (
+            <AiChip source={closure.properties.raw_text} sourceLabel={closure.properties.source === "mts_alerts" ? "Original MTS alert" : "Original report"} />
+          )}
         </div>
       )}
     </div>

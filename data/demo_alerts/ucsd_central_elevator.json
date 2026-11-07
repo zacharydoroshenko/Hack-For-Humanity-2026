@@ -17,7 +17,7 @@
       "description_text": {
         "translation": [
           {
-            "text": "UC San Diego Central Campus Stn - elevators out of service until further notice. Riders needing elevators pls use VA Medical Center Stn. (dummy alert)"
+            "text": "UC San Diego Central Campus Stn - elevators out of service until further notice. Riders needing elevators pls use VA Medical Center Stn."
           }
         ]
       }
@@ -42,7 +42,7 @@
       "alternative": "Use VA Medical Center Station",
       "stop_id": "77782",
       "source": "mts_alerts",
-      "raw_text": "UC San Diego Central Campus Stn - elevators out of service until further notice. Riders needing elevators pls use VA Medical Center Stn. (dummy alert)",
+      "raw_text": "UC San Diego Central Campus Stn - elevators out of service until further notice. Riders needing elevators pls use VA Medical Center Stn.",
       "ai_generated": true
     }
   }

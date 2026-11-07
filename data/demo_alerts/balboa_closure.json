@@ -17,7 +17,7 @@
       "description_text": {
         "translation": [
           {
-            "text": "Balboa Ave Station: SB platform closed for track work 9am-6pm today. Trains will pass through without stopping. (dummy alert)"
+            "text": "Balboa Ave Station: SB platform closed for track work 9am-6pm today. Trains will pass through without stopping."
           }
         ]
       }
@@ -42,7 +42,7 @@
       "alternative": null,
       "stop_id": "77775",
       "source": "mts_alerts",
-      "raw_text": "Balboa Ave Station: SB platform closed for track work 9am-6pm today. Trains will pass through without stopping. (dummy alert)",
+      "raw_text": "Balboa Ave Station: SB platform closed for track work 9am-6pm today. Trains will pass through without stopping.",
       "ai_generated": true
     }
   }

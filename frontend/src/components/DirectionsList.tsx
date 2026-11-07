@@ -1,11 +1,15 @@
 import type { Leg, PlanResponse } from "../api/client";
 import { formatMin } from "../format";
-import { IconCar, IconInfo, IconRideshare, IconRoll, IconTransit, IconWarning } from "./Icons";
+import { IconAlert, IconCar, IconInfo, IconRideshare, IconRoll, IconTransit, IconWarning } from "./Icons";
 
 interface Props {
   route: PlanResponse;
   focusedLeg: number | null;
   onFocusLeg: (i: number | null) => void;
+  /** legs that differ from the usual route because of an outage */
+  changedLegs?: Set<number>;
+  /** e.g. "UCSD Central Campus elevator out" */
+  changedBecause?: string | null;
 }
 
 const stationName = (n: string) => n.replace(/ Station$/, "");
@@ -41,7 +45,7 @@ function legTitle(leg: Leg) {
   }
 }
 
-export default function DirectionsList({ route, focusedLeg, onFocusLeg }: Props) {
+export default function DirectionsList({ route, focusedLeg, onFocusLeg, changedLegs, changedBecause }: Props) {
   const { summary } = route;
   const notes = route.legs.reduce((n, l) => n + ("warnings" in l ? l.warnings.length : 0), 0);
   const hasTransit = route.legs.some((l) => l.mode === "transit");
@@ -61,7 +65,12 @@ export default function DirectionsList({ route, focusedLeg, onFocusLeg }: Props)
         {route.legs.map((leg, i) => {
           const focused = focusedLeg === i;
           return (
-            <li key={i} className={`leg leg-${leg.mode} ${focused ? "focused" : ""}`}>
+            <li key={i} className={`leg leg-${leg.mode} ${focused ? "focused" : ""} ${changedLegs?.has(i) ? "changed" : ""}`}>
+              {changedLegs?.has(i) && changedBecause && (
+                <span className="leg-changed">
+                  <IconAlert size={14} /> Changed to avoid: {changedBecause}
+                </span>
+              )}
               <button
                 type="button"
                 className="leg-head"

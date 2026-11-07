@@ -1,0 +1,49 @@
+{
+  "alert": {
+    "id": "c_alert_county_center",
+    "alert": {
+      "informed_entity": [
+        {
+          "stop_id": "75080"
+        }
+      ],
+      "header_text": {
+        "translation": [
+          {
+            "text": "County Center/Little Italy Station closed"
+          }
+        ]
+      },
+      "description_text": {
+        "translation": [
+          {
+            "text": "BLUE LINE: County Center/Little Italy Station platform closed for emergency repairs until 8 PM. Trains will not stop. Accessible boarding available at Santa Fe Depot."
+          }
+        ]
+      }
+    }
+  },
+  "alternative_stop_id": "75083",
+  "closure": {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -117.1699,
+        32.72149
+      ]
+    },
+    "properties": {
+      "id": "c_alert_county_center",
+      "kind": "stop_closure",
+      "severity": "blocking",
+      "title": "County Center/Little Italy Station closed",
+      "description": "Trolley platform closed for emergency repairs; Blue Line trains will pass through without stopping.",
+      "alternative": "Use Santa Fe Depot",
+      "stop_id": "75080",
+      "source": "mts_alerts",
+      "raw_text": "BLUE LINE: County Center/Little Italy Station platform closed for emergency repairs until 8 PM. Trains will not stop. Accessible boarding available at Santa Fe Depot.",
+      "ai_generated": true
+    }
+  }
+}
