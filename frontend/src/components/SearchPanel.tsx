@@ -148,7 +148,7 @@ export default function SearchPanel(props: Props) {
       </details>
 
       <button type="submit" className="primary" disabled={!canSubmit}>
-        {loading ? "Finding routes…" : "Find accessible routes"}
+        {loading ? "Finding a route…" : "Find accessible route"}
       </button>
     </form>
   );

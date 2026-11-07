@@ -1,6 +1,9 @@
 import { useEffect, useMemo } from "react";
-import { MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Polyline, Popup, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import "maplibre-gl/dist/maplibre-gl.css";
+import "@maplibre/maplibre-gl-leaflet";
+import { loadBasemapStyle } from "./basemap";
 import {
   fromLatLng,
   toLatLng,
@@ -16,6 +19,8 @@ import type { PickMode } from "./SearchPanel";
 import { markerIcon } from "./mapMarkers";
 
 const CENTER: [number, number] = [32.815, -117.212];
+/** San Diego County (Oceanside/Fallbrook to the border, coast to Imperial County line) */
+const SD_COUNTY_BOUNDS = L.latLngBounds([32.52, -117.65], [33.52, -116.05]);
 const NEAR_ROUTE_M = 350;
 
 // ───────── geometry helpers (approximate, fine at city scale) ─────────
@@ -124,17 +129,17 @@ export default function MapView({ layers, route, from, to, pickMode, onPick, foc
   );
 
   return (
-    <MapContainer center={CENTER} zoom={12} className={`map ${pickMode ? "picking" : ""}`} keyboard zoomControl={false}>
-      {/* Muted basemap so the route stands out */}
-      <TileLayer
-        attribution="Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors"
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-        maxZoom={16}
-      />
-      <TileLayer
-        url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
-        maxZoom={16}
-      />
+    <MapContainer
+      center={CENTER}
+      zoom={12}
+      minZoom={9}
+      maxBounds={SD_COUNTY_BOUNDS}
+      maxBoundsViscosity={1}
+      className={`map ${pickMode ? "picking" : ""}`}
+      keyboard
+      zoomControl={false}
+    >
+      <VectorBasemap />
       <ClickHandler pickMode={pickMode} onPick={onPick} />
       <FitBounds route={route} focusedLeg={focusedLeg} />
       <ZoomControlBottomRight />
@@ -222,6 +227,35 @@ function ZoomControlBottomRight() {
     const c = L.control.zoom({ position: "bottomright" }).addTo(map);
     return () => {
       c.remove();
+    };
+  }, [map]);
+  return null;
+}
+
+/** Recolored vector basemap (see basemap.ts). Falls back to standard OSM tiles if the style can't load. */
+function VectorBasemap() {
+  const map = useMap();
+  useEffect(() => {
+    let layer: L.Layer | null = null;
+    let cancelled = false;
+    const attribution =
+      '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+    loadBasemapStyle()
+      .then((style) => {
+        if (cancelled) return;
+        layer = L.maplibreGL({ style, interactive: false }).addTo(map);
+        map.attributionControl?.addAttribution(attribution);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        layer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+      });
+    return () => {
+      cancelled = true;
+      layer?.remove();
+      map.attributionControl?.removeAttribution(attribution);
     };
   }, [map]);
   return null;

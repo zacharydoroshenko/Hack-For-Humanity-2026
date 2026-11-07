@@ -111,18 +111,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   outline: 3px solid #f59e0b; outline-offset: 2px;
 }
 
-/* mode tabs */
-.mode-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.mode-tab {
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 10px 4px 8px; background: #fff; color: var(--fg); border: 1px solid var(--border-strong); border-radius: 10px;
-}
-.mode-tab:hover { background: var(--surface); }
-.mode-tab.active { border: 2px solid var(--accent); background: var(--accent-soft); color: var(--accent); padding: 9px 3px 7px; }
-.mode-label { font-size: 0.9rem; font-weight: 600; }
-.mode-time { font-size: 0.95rem; font-weight: 700; color: var(--fg); }
-.mode-flag { position: absolute; top: -9px; right: -4px; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
-
 .error { margin: 0; padding: 10px 12px; color: var(--danger); background: var(--danger-soft); border-radius: 8px; }
 .empty-state { color: var(--muted); margin: 0; padding: 14px; background: var(--surface); border-radius: 10px; }
 

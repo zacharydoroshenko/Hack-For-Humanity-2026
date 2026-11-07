@@ -13,7 +13,7 @@
  */
 import { beforeEach, describe, expect, it } from "vitest";
 import type { PlanResponse, TransitLeg } from "@shared/types";
-import { HAPPY_PATH } from "../demoConfig";
+import { HAPPY_PATH, PLACES } from "../demoConfig";
 import { mockIngest, mockLayers, mockPlan, resetMock } from "./server";
 
 const req = { from: HAPPY_PATH.from.coord, to: HAPPY_PATH.to.coord, max_grade: HAPPY_PATH.maxGrade };
@@ -100,6 +100,12 @@ describe("happy path (mock backend)", () => {
     // outages only affect transit
     mockIngest({ demo_file: "ucsd_central_elevator.json" });
     expect(mockPlan({ ...req, mode: "rideshare" }).rerouted).toBe(false);
+  });
+
+  it("a nearby destination is a roll-only route with no trolley", () => {
+    const pc = PLACES.find((p) => p.name === "Price Center")!;
+    const r = mockPlan({ from: HAPPY_PATH.from.coord, to: pc.coord });
+    expect(r.legs.map((l) => l.mode)).toEqual(["walk"]);
   });
 
   it("errors clearly when no start/destination can be found", () => {
