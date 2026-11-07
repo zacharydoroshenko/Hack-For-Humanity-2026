@@ -15,9 +15,11 @@ const toast = document.querySelector("#toast");
 const alertBanner = document.querySelector("#alertBanner");
 const alertSummary = document.querySelector("#alertSummary");
 const alertDetails = document.querySelector("#alertDetails");
+const aiExplain = document.querySelector("#aiExplain");
 const alertsUrl = "https://mna.mecatran.com/utw/ws/gtfsfeed/alerts/sdmts?apiKey=78161d20210d221e242d3f62056b1e764469525a&asText=true";
 let liveAlerts = [];
 let currentBannerAlert = null;
+const backendUrl = "http://localhost:8000";
 let routeMap = null;
 let mapLayers = [];
 
@@ -87,6 +89,7 @@ function updateAlertBanner() {
     alertBanner.querySelector("strong").textContent = "Live MTS accessibility status";
     alertSummary.textContent = "No active accessibility alerts are affecting the loaded MTS stops.";
     alertDetails.hidden = true;
+    aiExplain.hidden = true;
     return;
   }
   const first = relevant[0];
@@ -95,6 +98,7 @@ function updateAlertBanner() {
   alertBanner.querySelector(".alert-icon").textContent = "!";
   alertSummary.textContent = alertMessage(first);
   alertDetails.hidden = false;
+  aiExplain.hidden = false;
 }
 async function loadLiveAlerts() {
   try {
@@ -114,6 +118,7 @@ async function loadLiveAlerts() {
     alertBanner.querySelector("strong").textContent = "MTS live feed unavailable";
     alertSummary.textContent = "The live MTS feed is unavailable. Showing routes without real-time rerouting.";
     alertDetails.hidden = true;
+    aiExplain.hidden = true;
     console.error("Unable to load MTS GTFS-Realtime alerts:", error);
   }
 }
@@ -364,6 +369,42 @@ document.querySelector("#plannerForm").addEventListener("submit", event => {
 
 alertDetails.addEventListener("click", () => {
   if (currentBannerAlert) showToast(alertMessage(currentBannerAlert));
+});
+aiExplain.addEventListener("click", async () => {
+  if (!currentBannerAlert) return;
+  aiExplain.disabled = true;
+  aiExplain.innerHTML = "Asking Gemini…";
+  try {
+    const response = await fetch(`${backendUrl}/alerts/ingest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        alert: {
+          id: currentBannerAlert.id,
+          alert: {
+            informed_entity: currentBannerAlert.stopIds.map(stop_id => ({ stop_id })),
+            header_text: { translation: [{ text: currentBannerAlert.title }] },
+            description_text: { translation: [{ text: currentBannerAlert.description }] }
+          }
+        }
+      })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    const result = await response.json();
+    const closure = result.closure.properties;
+    alertSummary.textContent = `${closure.title}. ${closure.alternative || closure.description}`;
+    alertBanner.classList.add("ai-enhanced");
+    showToast(`Gemini structured this as: ${closure.kind.replace("_", " ")}.`);
+  } catch (error) {
+    const message = error instanceof TypeError
+      ? "Wayfinder backend is not reachable. Run uvicorn on port 8000, then refresh."
+      : "Gemini could not process this alert. Check the backend logs and GEMINI_API_KEY.";
+    showToast(message);
+    console.error("Unable to normalize MTS alert with Gemini:", error);
+  } finally {
+    aiExplain.disabled = false;
+    aiExplain.innerHTML = "Ask Wayfinder AI <span>✦</span>";
+  }
 });
 document.querySelector("#reportLink").addEventListener("click", () => showToast("Photo reporting is next: add a blocked sidewalk photo and Wayfinder will draft the report."));
 

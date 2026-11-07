@@ -93,6 +93,45 @@ the static accessible planner available and clearly reports that real-time
 rerouting is unavailable. A production deployment should proxy this feed
 server-side rather than expose the feed key in client code.
 
+## Gemini alert normalization
+
+The backend uses Gemini only for MTS alert interpretation. Configure the
+server environment before running it:
+
+```bash
+cp .env.example .env
+# Edit .env and set GEMINI_API_KEY to your local key.
+export GEMINI_MODEL="gemini-3.5-flash"  # optional
+uvicorn backend.main:app --reload --port 8000
+```
+
+Never put `GEMINI_API_KEY` in this README, frontend JavaScript, or any
+committed file. If a key was previously committed, revoke it and create a
+replacement before continuing.
+
+Keep the backend on port `8000`, and serve the static planner on a different
+port. With both running, open the static planner at
+<http://localhost:8080>. When the live MTS banner appears, click **Ask
+Wayfinder AI**. The browser sends the alert text to the local backend; the
+backend calls Gemini and returns a validated closure. The page then displays
+the AI-generated title and suggested alternative. The key stays on the server.
+
+```bash
+# Terminal 1, from the repository root
+uvicorn backend.main:app --reload --port 8000
+
+# Terminal 2, from the repository root
+python3 -m http.server 8080
+```
+
+`POST /alerts/ingest` extracts the MTS alert's text and informed stop IDs,
+calls the structured-output prompt in
+[`pipeline/gemini/prompts/alert_to_closure.md`](./pipeline/gemini/prompts/alert_to_closure.md),
+validates Gemini's response with Pydantic, and returns a closure used by the
+map and reroute state. Non-accessibility alerts are rejected instead of being
+silently treated as wheelchair barriers. Responses are cached in SQLite by
+the existing Gemini client.
+
 The map currently draws the selected route from MTS stop coordinates. It does
 not yet claim that the line between stops is a wheelchair-safe sidewalk path;
 the City's curb-ramp and sidewalk layers should be used to replace or augment
