@@ -1,140 +1,191 @@
-import { useEffect } from "react";
-import { CircleMarker, LayerGroup, LayersControl, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { useEffect, useMemo } from "react";
+import { MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import { toLatLng, fromLatLng, type LayersResponse, type LngLat, type PlanResponse } from "../api/client";
+import {
+  fromLatLng,
+  toLatLng,
+  type ClosureFeature,
+  type CurbRampFeature,
+  type LayersResponse,
+  type LngLat,
+  type PlanResponse,
+  type StopFeature,
+} from "../api/client";
+import type { Endpoint } from "../demoConfig";
+import type { PickMode } from "./SearchPanel";
+import { markerIcon } from "./mapMarkers";
 
-const CENTER: [number, number] = [32.81, -117.215];
+const CENTER: [number, number] = [32.815, -117.212];
+const NEAR_ROUTE_M = 350;
 
-const emojiIcon = (emoji: string, label: string) =>
-  L.divIcon({ className: "emoji-icon", html: `<span role="img" aria-label="${label}">${emoji}</span>`, iconSize: [24, 24] });
+// ───────── geometry helpers (approximate, fine at city scale) ─────────
+const M_PER_DEG_LAT = 111_320;
+function distToSegmentM(p: LngLat, a: LngLat, b: LngLat): number {
+  const k = Math.cos((p[1] * Math.PI) / 180) * M_PER_DEG_LAT;
+  const [px, py] = [p[0] * k, p[1] * M_PER_DEG_LAT];
+  const [ax, ay] = [a[0] * k, a[1] * M_PER_DEG_LAT];
+  const [bx, by] = [b[0] * k, b[1] * M_PER_DEG_LAT];
+  const dx = bx - ax;
+  const dy = by - ay;
+  const t = dx || dy ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy))) : 0;
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+function nearLine(p: LngLat, line: LngLat[], within: number): boolean {
+  for (let i = 0; i < line.length - 1; i++) if (distToSegmentM(p, line[i], line[i + 1]) < within) return true;
+  return false;
+}
+const firstPoint = (c: ClosureFeature): LngLat =>
+  c.geometry.type === "Point" ? c.geometry.coordinates : c.geometry.coordinates[0];
 
-const ICONS = {
-  from: emojiIcon("🟢", "Start"),
-  to: emojiIcon("🏁", "Destination"),
-  blocking: emojiIcon("⛔", "Blocking closure"),
-  warning: emojiIcon("⚠️", "Warning"),
-  ramp: emojiIcon("♿", "Curb ramp issue"),
-};
-
-// wheelchair_boarding: 0 unknown, 1 accessible, 2 not accessible
-const STOP_STYLE = {
-  0: { color: "#6b7280", label: "Accessibility unknown" },
-  1: { color: "#15803d", label: "Wheelchair accessible" },
-  2: { color: "#b91c1c", label: "Not wheelchair accessible" },
-} as const;
-
-function ClickToPick({ onPickFrom, onPickTo }: { onPickFrom: (p: LngLat) => void; onPickTo: (p: LngLat) => void }) {
+// ───────── map pieces ─────────
+function ClickHandler({ pickMode, onPick }: { pickMode: PickMode; onPick: (mode: "from" | "to", p: LngLat) => void }) {
   useMapEvents({
-    click: (e) => (e.originalEvent.shiftKey ? onPickTo(fromLatLng(e.latlng)) : onPickFrom(fromLatLng(e.latlng))),
-    contextmenu: (e) => onPickTo(fromLatLng(e.latlng)),
+    click: (e) => {
+      if (pickMode) onPick(pickMode, fromLatLng(e.latlng));
+    },
+    contextmenu: (e) => onPick("to", fromLatLng(e.latlng)),
   });
   return null;
 }
 
-function FitRoute({ route, from, to }: { route: PlanResponse | null; from: LngLat | null; to: LngLat | null }) {
+/** Zoom to the route (or focused leg) whenever it changes. */
+function FitBounds({ route, focusedLeg }: { route: PlanResponse | null; focusedLeg: number | null }) {
   const map = useMap();
-
   useEffect(() => {
-    const coordinates = route?.legs.flatMap((leg) => leg.geometry.coordinates) ?? [from, to].filter((point): point is LngLat => point !== null);
-    if (coordinates.length < 2) return;
-    map.fitBounds(coordinates.map(toLatLng), { padding: [32, 32], maxZoom: 15 });
-  }, [from, map, route, to]);
-
+    if (!route) return;
+    const legs = focusedLeg != null ? [route.legs[focusedLeg]] : route.legs;
+    const pts = legs.flatMap((l) => l?.geometry.coordinates ?? []).map(toLatLng);
+    if (pts.length) map.flyToBounds(L.latLngBounds(pts), { padding: [70, 70], maxZoom: 16, duration: 0.6 });
+  }, [route, focusedLeg, map]);
   return null;
 }
 
 interface Props {
   layers: LayersResponse | null;
   route: PlanResponse | null;
-  from: LngLat | null;
-  to: LngLat | null;
-  onPickFrom: (p: LngLat) => void;
-  onPickTo: (p: LngLat) => void;
+  from: Endpoint | null;
+  to: Endpoint | null;
+  pickMode: PickMode;
+  onPick: (mode: "from" | "to", p: LngLat) => void;
+  focusedLeg: number | null;
+  showAll: boolean;
 }
 
-export default function MapView({ layers, route, from, to, onPickFrom, onPickTo }: Props) {
-  return (
-    <MapContainer center={CENTER} zoom={12} className="map" aria-label="Map">
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <ClickToPick onPickFrom={onPickFrom} onPickTo={onPickTo} />
-      <FitRoute route={route} from={from} to={to} />
+export default function MapView({ layers, route, from, to, pickMode, onPick, focusedLeg, showAll }: Props) {
+  /** Only what matters for the current route; everything when showAll is on. */
+  const visible = useMemo(() => {
+    const stops = layers?.stops.features ?? [];
+    const closures = layers?.closures.features ?? [];
+    const ramps = layers?.curb_ramps.features ?? [];
+    if (showAll) return { stops, closures, ramps, routeStopIds: new Set<string>() };
 
-      {from && <Marker position={toLatLng(from)} icon={ICONS.from} />}
-      {to && <Marker position={toLatLng(to)} icon={ICONS.to} />}
+    const routeStopIds = new Set<string>();
+    const walkLines: LngLat[][] = [];
+    const allLines: LngLat[][] = [];
+    for (const leg of route?.legs ?? []) {
+      allLines.push(leg.geometry.coordinates);
+      if (leg.mode === "transit") {
+        routeStopIds.add(leg.from_stop.stop_id);
+        routeStopIds.add(leg.to_stop.stop_id);
+      }
+      if (leg.mode === "walk") walkLines.push(leg.geometry.coordinates);
+    }
+    const isOutage = (c: ClosureFeature) => c.properties.source === "mts_alerts";
+    const hasTransit = routeStopIds.size > 0;
 
-      {route?.legs.map((leg, i) => (
-        <Polyline
-          key={i}
-          positions={leg.geometry.coordinates.map(toLatLng)}
-          pathOptions={
-            leg.mode === "walk"
-              ? { color: "#111827", weight: 5, dashArray: "6 8" }
-              : { color: `#${leg.route_color}`, weight: 7 }
-          }
-        />
-      ))}
+    // Without a route: just the trolley line's stations and live outages.
+    // With a route: the stations you use, outages, and hazards/ramps next to the route.
+    const vStops: StopFeature[] = stops.filter((s) =>
+      route ? routeStopIds.has(s.properties.stop_id) || (hasTransit && s.properties.is_blue_line && s.properties.active_closure_ids.length > 0) : s.properties.is_blue_line,
+    );
+    const vClosures = closures.filter((c) => isOutage(c) || allLines.some((l) => nearLine(firstPoint(c), l, NEAR_ROUTE_M)));
+    const vRamps: CurbRampFeature[] = ramps.filter((r) => walkLines.some((l) => nearLine(r.geometry.coordinates, l, NEAR_ROUTE_M)));
+    return { stops: vStops, closures: vClosures, ramps: vRamps, routeStopIds };
+  }, [layers, route, showAll]);
 
-      <LayersControl position="topright">
-        <LayersControl.Overlay checked name="Stops">
-          <LayerGroupStops layers={layers} />
-        </LayersControl.Overlay>
-        <LayersControl.Overlay checked name="Closures">
-          <LayerGroupClosures layers={layers} />
-        </LayersControl.Overlay>
-        <LayersControl.Overlay checked name="Curb ramp issues">
-          <LayerGroupRamps layers={layers} />
-        </LayersControl.Overlay>
-      </LayersControl>
-    </MapContainer>
+  const routeLines = useMemo(
+    () =>
+      route?.legs.map((leg, i) => {
+        const dim = focusedLeg != null && focusedLeg !== i;
+        const positions = leg.geometry.coordinates.map(toLatLng);
+        const opacity = dim ? 0.3 : 1;
+        if (leg.mode === "walk") {
+          return (
+            <Polyline key={`r${i}`} positions={positions} pathOptions={{ color: "#0f172a", weight: 5, dashArray: "1 10", lineCap: "round", opacity }} />
+          );
+        }
+        const color = leg.mode === "transit" ? `#${leg.route_color}` : "#0891b2";
+        return [
+          <Polyline key={`r${i}c`} positions={positions} pathOptions={{ color: "#ffffff", weight: 11, opacity }} />,
+          <Polyline key={`r${i}`} positions={positions} pathOptions={{ color, weight: 6, opacity }} />,
+        ];
+      }),
+    [route, focusedLeg],
   );
-}
 
-
-function LayerGroupStops({ layers }: { layers: LayersResponse | null }) {
   return (
-    <LayerGroup>
-      {layers?.stops.features.map((f) => {
-        const s = STOP_STYLE[f.properties.wheelchair_boarding];
+    <MapContainer center={CENTER} zoom={12} className={`map ${pickMode ? "picking" : ""}`} keyboard zoomControl={false}>
+      {/* Muted basemap so the route stands out */}
+      <TileLayer
+        attribution="Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors"
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+        maxZoom={16}
+      />
+      <TileLayer
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+        maxZoom={16}
+      />
+      <ClickHandler pickMode={pickMode} onPick={onPick} />
+      <FitBounds route={route} focusedLeg={focusedLeg} />
+      <ZoomControlBottomRight />
+
+      {routeLines}
+
+      {visible.stops.map((f) => {
         const closed = f.properties.active_closure_ids.length > 0;
+        const p = f.properties;
+        const icon = p.is_blue_line
+          ? markerIcon(visible.routeStopIds.has(p.stop_id) ? "stationRoute" : "station")
+          : markerIcon(p.wheelchair_boarding === 1 ? "stopOk" : p.wheelchair_boarding === 2 ? "stopNo" : "stopUnknown");
         return (
-          <CircleMarker
-            key={f.properties.stop_id}
-            center={toLatLng(f.geometry.coordinates)}
-            radius={f.properties.is_blue_line ? 8 : 5}
-            pathOptions={{ color: closed ? "#b91c1c" : s.color, fillOpacity: 0.8, weight: closed ? 4 : 2 }}
-          >
-            <Popup>
-              <strong>{f.properties.name}</strong>
-              <br />
-              {s.label}
-              {closed && <><br />⛔ Active closure</>}
-            </Popup>
-          </CircleMarker>
+          <Marker key={p.stop_id} position={toLatLng(f.geometry.coordinates)} icon={icon}>
+            <Tooltip direction="top" offset={[0, -10]}>
+              {p.name}
+              {closed ? " (outage)" : ""}
+            </Tooltip>
+          </Marker>
         );
       })}
-    </LayerGroup>
-  );
-}
 
-function LayerGroupClosures({ layers }: { layers: LayersResponse | null }) {
-  return (
-    <LayerGroup>
-      {layers?.closures.features.map((f) => {
+      {visible.ramps.map((f) => (
+        <Marker key={f.properties.id} position={toLatLng(f.geometry.coordinates)} icon={markerIcon("ramp")}>
+          <Tooltip direction="top" offset={[0, -8]}>{f.properties.description ?? "Curb ramp issue"}</Tooltip>
+        </Marker>
+      ))}
+
+      {visible.closures.map((f) => {
         const p = f.properties;
         const popup = (
           <Popup>
             <strong>{p.title}</strong>
             {p.description && <p>{p.description}</p>}
-            {p.alternative && <p>➡️ {p.alternative}</p>}
-            {p.ai_generated && <span className="ai-chip" title={p.raw_text ?? ""}>AI-interpreted</span>}
+            {p.alternative && <p>Suggested: {p.alternative}</p>}
+            <p className="muted">
+              Source: {p.source.replace("_", " ")}
+              {p.ai_generated && " · AI-interpreted"}
+            </p>
+            {p.raw_text && <p className="raw-text">“{p.raw_text}”</p>}
           </Popup>
         );
         if (f.geometry.type === "Point") {
           return (
-            <Marker key={p.id} position={toLatLng(f.geometry.coordinates)} icon={p.severity === "blocking" ? ICONS.blocking : ICONS.warning}>
+            <Marker
+              key={p.id}
+              position={toLatLng(f.geometry.coordinates)}
+              icon={markerIcon(p.severity === "blocking" ? "outage" : "warning")}
+              zIndexOffset={1000}
+            >
+              <Tooltip direction="top" offset={[0, -14]}>{p.title}</Tooltip>
               {popup}
             </Marker>
           );
@@ -143,24 +194,35 @@ function LayerGroupClosures({ layers }: { layers: LayersResponse | null }) {
           <Polyline
             key={p.id}
             positions={f.geometry.coordinates.map(toLatLng)}
-            pathOptions={{ color: p.severity === "blocking" ? "#b91c1c" : "#d97706", weight: 6 }}
+            pathOptions={{ color: p.severity === "blocking" ? "#b91c1c" : "#d97706", weight: 7, dashArray: p.severity === "warning" ? "8 6" : undefined }}
           >
+            <Tooltip sticky>{p.title}</Tooltip>
             {popup}
           </Polyline>
         );
       })}
-    </LayerGroup>
+
+      {from && (
+        <Marker position={toLatLng(from.coord)} icon={markerIcon("start")} zIndexOffset={2000}>
+          <Tooltip direction="top" offset={[0, -12]}>Start: {from.label}</Tooltip>
+        </Marker>
+      )}
+      {to && (
+        <Marker position={toLatLng(to.coord)} icon={markerIcon("end")} zIndexOffset={2000}>
+          <Tooltip direction="top" offset={[0, -34]}>Destination: {to.label}</Tooltip>
+        </Marker>
+      )}
+    </MapContainer>
   );
 }
 
-function LayerGroupRamps({ layers }: { layers: LayersResponse | null }) {
-  return (
-    <LayerGroup>
-      {layers?.curb_ramps.features.map((f) => (
-        <Marker key={f.properties.id} position={toLatLng(f.geometry.coordinates)} icon={ICONS.ramp}>
-          <Popup>{f.properties.description ?? "Curb ramp issue"}</Popup>
-        </Marker>
-      ))}
-    </LayerGroup>
-  );
+function ZoomControlBottomRight() {
+  const map = useMap();
+  useEffect(() => {
+    const c = L.control.zoom({ position: "bottomright" }).addTo(map);
+    return () => {
+      c.remove();
+    };
+  }, [map]);
+  return null;
 }

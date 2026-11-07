@@ -1,0 +1,49 @@
+{
+  "alert": {
+    "id": "c_alert_oldtown_elev",
+    "alert": {
+      "informed_entity": [
+        {
+          "stop_id": "75042"
+        }
+      ],
+      "header_text": {
+        "translation": [
+          {
+            "text": "Elevator out at Old Town Station"
+          }
+        ]
+      },
+      "description_text": {
+        "translation": [
+          {
+            "text": "ELEVATOR OUTAGE: Old Town Transit Center elevator is temporarily out of service. Customers requiring elevator access should use Washington St Station. We apologize for the inconvenience. (dummy alert)"
+          }
+        ]
+      }
+    }
+  },
+  "alternative_stop_id": "75076",
+  "closure": {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -117.19949,
+        32.75491
+      ]
+    },
+    "properties": {
+      "id": "c_alert_oldtown_elev",
+      "kind": "elevator_outage",
+      "severity": "blocking",
+      "title": "Elevator out at Old Town Station",
+      "description": "The elevator between the trolley platform and street level is out of service.",
+      "alternative": "Use Washington Street Station",
+      "stop_id": "75042",
+      "source": "mts_alerts",
+      "raw_text": "ELEVATOR OUTAGE: Old Town Transit Center elevator is temporarily out of service. Customers requiring elevator access should use Washington St Station. We apologize for the inconvenience. (dummy alert)",
+      "ai_generated": true
+    }
+  }
+}

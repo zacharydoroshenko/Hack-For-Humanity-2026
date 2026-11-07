@@ -1,0 +1,13 @@
+{
+  "name": "hack-for-humanity-2026",
+  "private": true,
+  "description": "Root convenience scripts; the frontend lives in frontend/.",
+  "scripts": {
+    "postinstall": "npm --prefix frontend install",
+    "dev": "npm --prefix frontend run dev:fixtures",
+    "dev:live": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix frontend test",
+    "dev:fixtures": "npm --prefix frontend run dev:fixtures"
+  }
+}

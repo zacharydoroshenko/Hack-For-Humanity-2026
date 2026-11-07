@@ -17,3 +17,4 @@ data/raw/
 *.pptx
 
 .DS_Store
+*.tsbuildinfo

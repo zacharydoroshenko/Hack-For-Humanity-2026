@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="360" height="120">
+  <g transform="translate(14,6)">
+    <path d="M44 4 C22 4 6 20 6 42 C6 70 44 108 44 108 C44 108 82 70 82 42 C82 20 66 4 44 4 Z" fill="#7C3AED"/>
+    <path d="M44 20 L62 27 V42 C62 52 55 60 44 65 C33 60 26 52 26 42 V27 Z" fill="#fff"/>
+    <path d="M36 42 L42 48 L53 36" fill="none" stroke="#7C3AED" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="110" y="72" font-family="Helvetica, Arial, sans-serif" font-size="40" font-weight="700" fill="#0F172A">SafeRoute</text>
+</svg>
