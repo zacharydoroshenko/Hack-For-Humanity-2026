@@ -1,0 +1,10 @@
+rider_category_id,rider_category_name,is_default_fare_category,eligibility_url,max_age,min_age
+adult,Adult,0,https://www.sdmts.com/fares/fare-chart,,
+children,Children (Age 5 and Under),0,https://www.sdmts.com/fares-passes/reduced-fares-and-passes,5,
+college,College Students,0,https://www.sdmts.com/fares-passes/reduced-fares-and-passes,,
+disabled,Persons with Disabilities,0,https://www.sdmts.com/fares-passes/reduced-fares-and-passes,,
+medicare,Medicare Recipients,0,https://www.sdmts.com/fares-passes/reduced-fares-and-passes,,
+senior,Seniors (Age 65 and Over),0,https://www.sdmts.com/fares-passes/reduced-fares-and-passes,,65
+senior_2,"Seniors (Born on or before September 1, 1959)",0,https://www.sdmts.com/fares-passes/reduced-fares-and-passes,,
+youth,"Youth (Ages 6-18), w/o Youth Opportunity Pass",0,https://www.sdmts.com/fares-passes/reduced-fares-and-passes,18,6
+youth_oppass,"Youth (Ages 6-18), with Youth Opportunity Pass",0,https://www.sdmts.com/fares/youth-opportunity-pass-program,18,6

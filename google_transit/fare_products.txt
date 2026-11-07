@@ -1,0 +1,88 @@
+fare_product_id,fare_product_name,amount,currency,fare_media_id,rider_category_id,cap_required,duration_amount,duration_type,duration_unit
+college_monthly,College Monthly Pass,57.60,USD,pronto_digital,college,0,1,1,5
+college_monthly,College Monthly Pass,57.60,USD,pronto_physical,college,0,1,1,5
+college_semester,College Semester Pass (Regional Colleges),180.00,USD,pronto_digital,college,0,5,2,5
+college_semester,College Semester Pass (Regional Colleges),180.00,USD,pronto_physical,college,0,5,2,5
+college_upass,UC San Diego Triton U-Pass,0.00,USD,pronto_digital,college,0,60,2,3
+college_upass,UC San Diego Triton U-Pass,0.00,USD,pronto_physical,college,0,60,2,3
+day_pass,Adult 1-Day Pass,7.00,USD,pronto_digital,adult,1,1,2,3
+day_pass,Adult 1-Day Pass,7.00,USD,pronto_physical,adult,1,1,2,3
+day_pass_discount,Persons with Disabilities 1-Day Pass,3.50,USD,pronto_digital,disabled,1,1,2,3
+day_pass_discount,Persons with Disabilities 1-Day Pass,3.50,USD,pronto_physical,disabled,1,1,2,3
+day_pass_discount,Medicare Cardholders 1-Day Pass,3.50,USD,pronto_digital,medicare,1,1,2,3
+day_pass_discount,Medicare Cardholders 1-Day Pass,3.50,USD,pronto_physical,medicare,1,1,2,3
+day_pass_discount,Senior 1-Day Pass,3.50,USD,pronto_digital,senior,1,1,2,3
+day_pass_discount,Senior 1-Day Pass,3.50,USD,pronto_physical,senior,1,1,2,3
+day_pass_premium,Adult 1-Day Pass (Premium),14.00,USD,pronto_digital,adult,1,1,2,3
+day_pass_premium,Adult 1-Day Pass (Premium),14.00,USD,pronto_physical,adult,1,1,2,3
+day_pass_premium_discount,Persons with Disabilities 1-Day Pass (Premium),7.00,USD,pronto_digital,disabled,1,1,2,3
+day_pass_premium_discount,Persons with Disabilities 1-Day Pass (Premium),7.00,USD,pronto_physical,disabled,1,1,2,3
+day_pass_premium_discount,Medicare Cardholders 1-Day Pass (Premium),7.00,USD,pronto_digital,medicare,1,1,2,3
+day_pass_premium_discount,Medicare Cardholders 1-Day Pass (Premium),7.00,USD,pronto_physical,medicare,1,1,2,3
+day_pass_premium_discount,Senior 1-Day Pass (Premium),7.00,USD,pronto_digital,senior,1,1,2,3
+day_pass_premium_discount,Senior 1-Day Pass (Premium),7.00,USD,pronto_physical,senior,1,1,2,3
+regional_monthly,Regional Adult Monthly Pass,85.00,USD,pronto_digital,adult,2,1,1,5
+regional_monthly,Regional Adult Monthly Pass,85.00,USD,pronto_physical,adult,2,1,1,5
+regional_monthly_discount,Persons with Disabilities Monthly Pass,28.00,USD,pronto_digital,disabled,2,1,1,5
+regional_monthly_discount,Persons with Disabilities Monthly Pass,28.00,USD,pronto_physical,disabled,2,1,1,5
+regional_monthly_discount,Medicare Cardholders Monthly Pass,28.00,USD,pronto_digital,medicare,2,1,1,5
+regional_monthly_discount,Medicare Cardholders Monthly Pass,28.00,USD,pronto_physical,medicare,2,1,1,5
+regional_monthly_discount,Senior Monthly Pass,28.00,USD,pronto_digital,senior,2,1,1,5
+regional_monthly_discount,Senior Monthly Pass,28.00,USD,pronto_physical,senior,2,1,1,5
+regional_monthly_premium,Regional Adult Monthly Pass (Premium),125.00,USD,pronto_digital,adult,2,1,1,5
+regional_monthly_premium,Regional Adult Monthly Pass (Premium),125.00,USD,pronto_physical,adult,2,1,1,5
+regional_monthly_premium_discount,Persons with Disabilities Monthly Pass (Premium),42.00,USD,pronto_digital,disabled,2,1,1,5
+regional_monthly_premium_discount,Persons with Disabilities Monthly Pass (Premium),42.00,USD,pronto_physical,disabled,2,1,1,5
+regional_monthly_premium_discount,Medicare Cardholders Monthly Pass (Premium),42.00,USD,pronto_digital,medicare,2,1,1,5
+regional_monthly_premium_discount,Medicare Cardholders Monthly Pass (Premium),42.00,USD,pronto_physical,medicare,2,1,1,5
+regional_monthly_premium_discount,Senior Monthly Pass (Premium),42.00,USD,pronto_digital,senior,2,1,1,5
+regional_monthly_premium_discount,Senior Monthly Pass (Premium),42.00,USD,pronto_physical,senior,2,1,1,5
+single_ride,Single ride,3.00,USD,pronto_digital,adult,,,,
+single_ride,Single ride,3.00,USD,pronto_physical,adult,,,,
+single_ride,Single ride (free),0.00,USD,,children,,,,
+single_ride,Single ride,3.00,USD,pronto_digital,college,,,,
+single_ride,Single ride,3.00,USD,pronto_physical,college,,,,
+single_ride,Single ride (reduced),1.50,USD,pronto_digital,disabled,,,,
+single_ride,Single ride (reduced),1.50,USD,pronto_physical,disabled,,,,
+single_ride,Single ride (reduced),1.50,USD,pronto_digital,medicare,,,,
+single_ride,Single ride (reduced),1.50,USD,pronto_physical,medicare,,,,
+single_ride,Single ride (reduced),1.50,USD,pronto_digital,senior,,,,
+single_ride,Single ride (reduced),1.50,USD,pronto_physical,senior,,,,
+single_ride,Single ride (reduced),1.50,USD,pronto_digital,youth,,,,
+single_ride,Single ride (reduced),1.50,USD,pronto_physical,youth,,,,
+single_ride,Single ride (free / Youth Opportunity Pass),0.00,USD,pronto_digital,youth_oppass,,,,
+single_ride,Single ride (free / Youth Opportunity Pass),0.00,USD,pronto_physical,youth_oppass,,,,
+single_ride_airport,Single ride Airport (free),0.00,USD,,,,,,
+single_ride_express,Single ride express,6.00,USD,pronto_digital,adult,,,,
+single_ride_express,Single ride express,6.00,USD,pronto_physical,adult,,,,
+single_ride_express,Single ride express (free),0.00,USD,,children,,,,
+single_ride_express,Single ride express,6.00,USD,pronto_digital,college,,,,
+single_ride_express,Single ride express,6.00,USD,pronto_physical,college,,,,
+single_ride_express,Single ride express (reduced),3.00,USD,pronto_digital,disabled,,,,
+single_ride_express,Single ride express (reduced),3.00,USD,pronto_physical,disabled,,,,
+single_ride_express,Single ride express (reduced),3.00,USD,pronto_digital,medicare,,,,
+single_ride_express,Single ride express (reduced),3.00,USD,pronto_physical,medicare,,,,
+single_ride_express,Single ride express (reduced),3.00,USD,pronto_digital,senior,,,,
+single_ride_express,Single ride express (reduced),3.00,USD,pronto_physical,senior,,,,
+single_ride_express,Single ride express (reduced),3.00,USD,pronto_digital,youth,,,,
+single_ride_express,Single ride express (reduced),3.00,USD,pronto_physical,youth,,,,
+single_ride_express,Single ride express (free / Youth Opportunity Pass),0.00,USD,pronto_digital,youth_oppass,,,,
+single_ride_express,Single ride express (free / Youth Opportunity Pass),0.00,USD,pronto_physical,youth_oppass,,,,
+single_ride_ferry,Single ride ferry,9.00,USD,pronto_digital,,,,,
+single_ride_ferry,Single ride ferry,9.00,USD,pronto_physical,,,,,
+single_ride_ferry,Single ride ferry (free),0.00,USD,,children,,,,
+single_ride_rural,Single ride rural,10.00,USD,pronto_digital,adult,,,,
+single_ride_rural,Single ride rural,10.00,USD,pronto_physical,adult,,,,
+single_ride_rural,Single ride rural (free),0.00,USD,,children,,,,
+single_ride_rural,Single ride rural,10.00,USD,pronto_digital,college,,,,
+single_ride_rural,Single ride rural,10.00,USD,pronto_physical,college,,,,
+single_ride_rural,Single ride rural (reduced),5.00,USD,pronto_digital,disabled,,,,
+single_ride_rural,Single ride rural (reduced),5.00,USD,pronto_physical,disabled,,,,
+single_ride_rural,Single ride rural (reduced),5.00,USD,pronto_digital,medicare,,,,
+single_ride_rural,Single ride rural (reduced),5.00,USD,pronto_physical,medicare,,,,
+single_ride_rural,Single ride rural (reduced),5.00,USD,pronto_digital,senior,,,,
+single_ride_rural,Single ride rural (reduced),5.00,USD,pronto_physical,senior,,,,
+single_ride_rural,Single ride rural (reduced),5.00,USD,pronto_digital,youth,,,,
+single_ride_rural,Single ride rural (reduced),5.00,USD,pronto_physical,youth,,,,
+single_ride_rural,Single ride rural (free / Youth Opportunity Pass),0.00,USD,pronto_digital,youth_oppass,,,,
+single_ride_rural,Single ride rural (free / Youth Opportunity Pass),0.00,USD,pronto_physical,youth_oppass,,,,

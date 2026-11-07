@@ -1,0 +1,6 @@
+network_id,network_name
+AIRPORT,
+FERRY,
+RAPID_EXPRESS_PREMIUM,
+RURAL,
+SDMTS,SDMTS

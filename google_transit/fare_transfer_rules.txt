@@ -1,0 +1,8 @@
+from_leg_group_id,to_leg_group_id,transfer_count,duration_limit,duration_limit_type,fare_transfer_type,fare_product_id
+sdmts,sdmts,-1,7200,1,0,
+sdmts,sdmts_express,,7200,1,2,single_ride_express
+sdmts,sdmts_rural,,7200,1,2,single_ride_rural
+sdmts_express,sdmts,,7200,1,0,
+sdmts_express,sdmts_express,-1,7200,1,0,
+sdmts_rural,sdmts,,7200,1,0,
+sdmts_rural,sdmts_rural,-1,7200,1,0,
