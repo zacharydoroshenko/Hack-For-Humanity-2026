@@ -63,7 +63,7 @@ def generate_json(prompt: str, schema: type[T], *, task: str) -> T:
     """Call Gemini with a response schema; cached by (task, model, prompt)."""
     from google.genai import types
 
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
     key = hashlib.sha256(f"{task}|{model}|{prompt}".encode()).hexdigest()
     if (cached := _cache_get(key)) is not None:
         return schema.model_validate_json(cached)
