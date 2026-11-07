@@ -11,6 +11,7 @@ import {
   type LayersResponse,
   type LngLat,
   type PlanResponse,
+  type RouteOption,
 } from "./api/client";
 import { DEMO_ALERT_OPTIONS, HAPPY_PATH, PLACES, type Endpoint } from "./demoConfig";
 import logoUrl from "./assets/logo.svg";
@@ -18,6 +19,7 @@ import MapView from "./components/MapView";
 import SearchPanel, { type PickMode, type SearchSettings } from "./components/SearchPanel";
 import DirectionsList from "./components/DirectionsList";
 import RerouteBanner from "./components/RerouteBanner";
+import RouteOptions from "./components/RouteOptions";
 import DemoControls from "./components/DemoControls";
 import AlertToast from "./components/AlertToast";
 import Legend from "./components/Legend";
@@ -37,6 +39,8 @@ export default function App() {
   const [route, setRoute] = useState<PlanResponse | null>(null);
   const [from, setFrom] = useState<Endpoint | null>(HAPPY_PATH.from);
   const [to, setTo] = useState<Endpoint | null>(HAPPY_PATH.to);
+  const [via, setVia] = useState<(Endpoint | null)[]>([]);
+  const [selectedOption, setSelectedOption] = useState(0);
   const [settings, setSettings] = useState<SearchSettings>(DEFAULT_SETTINGS);
   const [pickMode, setPickMode] = useState<PickMode>(null);
   const [focusedLeg, setFocusedLeg] = useState<number | null>(null);
@@ -68,22 +72,45 @@ export default function App() {
     setError(null);
     setFocusedLeg(null);
     try {
-      setRoute(await plan({ from: from.coord, to: to.coord, max_grade: settings.maxGrade, avoid_unverified: settings.avoidUnverified }));
+      const stops = via.filter((v): v is Endpoint => v !== null).map((v) => v.coord);
+      setRoute(
+        await plan({
+          from: from.coord,
+          to: to.coord,
+          ...(stops.length ? { via: stops } : {}),
+          max_grade: settings.maxGrade,
+          avoid_unverified: settings.avoidUnverified,
+        }),
+      );
+      setSelectedOption(0);
     } catch (e) {
       setError(String(e).replace(/^Error: /, ""));
     } finally {
       setLoading(false);
     }
-  }, [from, to, settings.maxGrade, settings.avoidUnverified]);
+  }, [from, to, via, settings.maxGrade, settings.avoidUnverified]);
 
   const runPlanRef = useRef(runPlan);
   runPlanRef.current = runPlan;
 
-  const onPick = (which: "from" | "to", p: LngLat) => {
+  const onPick = (which: Exclude<PickMode, null>, p: LngLat) => {
     const ep = { coord: p, label: nearestPlaceLabel(p) };
     if (which === "from") setFrom(ep);
-    else setTo(ep);
+    else if (which === "to") setTo(ep);
+    else setVia((v) => v.map((x, i) => (i === which ? ep : x)));
     setPickMode(which === "from" && !to ? "to" : null);
+  };
+
+  // Route options from the backend (best first); older backends send a single route
+  const options: RouteOption[] = route
+    ? route.options?.length
+      ? route.options
+      : [{ id: "only", label: "Recommended", summary: route.summary, legs: route.legs }]
+    : [];
+  const selected = options[selectedOption] ?? options[0] ?? null;
+  const selectOption = (i: number) => {
+    setSelectedOption(i);
+    setFocusedLeg(null);
   };
 
   const simulate = async (file: string) => {
@@ -108,6 +135,8 @@ export default function App() {
     setFocusedLeg(null);
     setFrom(HAPPY_PATH.from);
     setTo(HAPPY_PATH.to);
+    setVia([]);
+    setSelectedOption(0);
     setSettings(DEFAULT_SETTINGS);
     await refreshLayers();
   };
@@ -169,6 +198,8 @@ export default function App() {
           to={to}
           onFrom={setFrom}
           onTo={setTo}
+          via={via}
+          onVia={setVia}
           pickMode={pickMode}
           onPickMode={setPickMode}
           onSubmit={runPlan}
@@ -178,7 +209,10 @@ export default function App() {
         {error && <p role="alert" className="error">{error}</p>}
 
         {route?.rerouted && route.reroute && <RerouteBanner reroute={route.reroute} closures={layers?.closures.features ?? []} />}
-        {route && <DirectionsList route={route} focusedLeg={focusedLeg} onFocusLeg={setFocusedLeg} />}
+        {route && <RouteOptions options={options} selected={selectedOption} onSelect={selectOption} />}
+        {route && selected && (
+          <DirectionsList route={{ ...route, summary: selected.summary, legs: selected.legs }} focusedLeg={focusedLeg} onFocusLeg={setFocusedLeg} />
+        )}
         {!hasResults && !loading && (
           <p className="empty-state">
             Choose a start and destination to find an accessible route. Curb-ramp data covers City "Mobility Element"
@@ -192,7 +226,10 @@ export default function App() {
       <main className="map-wrap" aria-label="Map">
         <MapView
           layers={layers}
-          route={route}
+          route={selected}
+          alternatives={options.map((option, index) => ({ index, option })).filter((a) => a.index !== selectedOption)}
+          onSelectAlternative={selectOption}
+          via={via}
           from={from}
           to={to}
           pickMode={pickMode}

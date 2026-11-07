@@ -24,6 +24,7 @@ FIXTURE_MODELS: dict[str, type[BaseModel]] = {
     "plan_normal.json": c.PlanResponse,
     "plan_rerouted.json": c.PlanResponse,
     "plan_rideshare.json": c.PlanResponse,
+    "plan_options.json": c.PlanResponse,
     "layers.json": c.LayersResponse,
     "alert_ingest.json": c.AlertIngestResponse,
     "health.json": c.HealthResponse,

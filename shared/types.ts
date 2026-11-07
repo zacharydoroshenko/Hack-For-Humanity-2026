@@ -47,6 +47,8 @@ export interface PlanRequest {
   text?: string;
   from?: LngLat;
   to?: LngLat;
+  /** Intermediate stops, visited in order between `from` and `to`. */
+  via?: LngLat[];
   max_grade?: number; // default 0.05
   avoid_unverified?: boolean; // default false
   mode?: TravelMode; // default "transit"
@@ -114,6 +116,19 @@ export interface Reroute {
   ai_generated: boolean;
 }
 
+/** One candidate route. */
+export interface RouteOption {
+  id: string;
+  /** Short reason to pick it, e.g. "Fastest", "Least rolling", "Avoids outage". */
+  label: string;
+  summary: {
+    duration_min: number;
+    walk_m: number;
+    transfers: number;
+  };
+  legs: Leg[];
+}
+
 export interface PlanResponse {
   /** Echo of the requested mode (optional; absent means "transit"). */
   mode?: TravelMode;
@@ -126,6 +141,11 @@ export interface PlanResponse {
   legs: Leg[];
   rerouted: boolean;
   reroute: Reroute | null;
+  /**
+   * All candidate routes, best first (optional). When present, options[0] has the same
+   * summary/legs as the top-level fields, so older clients keep working.
+   */
+  options?: RouteOption[];
 }
 
 // ───────────────────────── GET /layers ─────────────────────────

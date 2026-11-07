@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { PLACES, type Endpoint } from "../demoConfig";
-import { IconCrosshair } from "./Icons";
+import { IconClose, IconCrosshair } from "./Icons";
 
 interface Props {
   label: string;
@@ -8,10 +8,12 @@ interface Props {
   onChange: (e: Endpoint | null) => void;
   picking: boolean;
   onPickOnMap: () => void;
+  /** Shown for intermediate stops */
+  onRemove?: () => void;
 }
 
 /** Text field with place suggestions, plus a "pick on map" button. Keyboard-friendly alternative to map clicks. */
-export default function PlaceInput({ label, value, onChange, picking, onPickOnMap }: Props) {
+export default function PlaceInput({ label, value, onChange, picking, onPickOnMap, onRemove }: Props) {
   const id = useId();
   const listId = `${id}-list`;
   const [text, setText] = useState(value?.label ?? "");
@@ -54,6 +56,12 @@ export default function PlaceInput({ label, value, onChange, picking, onPickOnMa
           <IconCrosshair size={20} />
           <span className="sr-only">Pick {label.toLowerCase()} on the map</span>
         </button>
+        {onRemove && (
+          <button type="button" className="icon-btn remove-btn" onClick={onRemove} title={`Remove ${label.toLowerCase()}`}>
+            <IconClose size={18} />
+            <span className="sr-only">Remove {label.toLowerCase()}</span>
+          </button>
+        )}
       </div>
     </div>
   );

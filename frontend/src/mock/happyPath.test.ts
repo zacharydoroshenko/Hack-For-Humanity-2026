@@ -20,7 +20,7 @@ const req = { from: HAPPY_PATH.from.coord, to: HAPPY_PATH.to.coord, max_grade: H
 const transit = (r: PlanResponse) => r.legs.find((l): l is TransitLeg => l.mode === "transit");
 
 function expectContractShape(r: PlanResponse) {
-  expect(Object.keys(r).sort()).toEqual(["legs", "mode", "parsed_request", "reroute", "rerouted", "summary"]);
+  expect(Object.keys(r).filter((k) => k !== "options").sort()).toEqual(["legs", "mode", "parsed_request", "reroute", "rerouted", "summary"]);
   for (const leg of r.legs) {
     expect(leg.geometry.type).toBe("LineString");
     expect(leg.geometry.coordinates.length).toBeGreaterThanOrEqual(2);
@@ -106,6 +106,32 @@ describe("happy path (mock backend)", () => {
     const pc = PLACES.find((p) => p.name === "Price Center")!;
     const r = mockPlan({ from: HAPPY_PATH.from.coord, to: pc.coord });
     expect(r.legs.map((l) => l.mode)).toEqual(["walk"]);
+  });
+
+  it("returns several distinct route options, best first, mirroring the top-level route", () => {
+    const r = mockPlan(req);
+    expect(r.options!.length).toBeGreaterThanOrEqual(2);
+    expect(r.options![0].legs).toEqual(r.legs);
+    expect(r.options![0].label).toBe("Fastest");
+    const keys = r.options!.map((o) => JSON.stringify(o.legs.map((l) => (l.mode === "transit" ? l.from_stop.stop_id + l.to_stop.stop_id : l.mode))));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("visits intermediate stops in order", () => {
+    const pc = PLACES.find((p) => p.name === "Price Center")!;
+    const r = mockPlan({ ...req, via: [pc.coord] });
+    const first = r.legs[0];
+    expect(first.mode).toBe("walk");
+    // first segment: Geisel -> Price Center is a short roll ending at the stop
+    const end = first.geometry.coordinates[first.geometry.coordinates.length - 1];
+    expect(end).toEqual(pc.coord);
+    expect(transit(r)!.to_stop.name).toBe("Old Town Station");
+  });
+
+  it("still offers route options when the trip has an intermediate stop", () => {
+    const balboa = PLACES.find((p) => p.name === "Balboa Avenue Transit Center")!;
+    const r = mockPlan({ ...req, via: [balboa.coord] });
+    expect(r.options!.length).toBeGreaterThanOrEqual(2);
   });
 
   it("errors clearly when no start/destination can be found", () => {

@@ -13,7 +13,8 @@ from pipeline.config import RAW_DIR
 
 load_dotenv()
 
-URL = "http://app.mecatran.com/utw/ws/gtfsfeed/alerts/sdmts"
+# app.mecatran.com now 301-redirects; mna.mecatran.com is the live host
+URL = os.getenv("MTS_ALERTS_URL", "https://mna.mecatran.com/utw/ws/gtfsfeed/alerts/sdmts")
 
 
 def main() -> None:

@@ -45,6 +45,7 @@ class PlanRequest(Strict):
     text: str | None = None
     from_: LngLat | None = Field(default=None, alias="from")
     to: LngLat | None = None
+    via: list[LngLat] = []  # intermediate stops, in order
     max_grade: float = 0.05
     avoid_unverified: bool = False
     mode: TravelMode = "transit"
@@ -120,6 +121,13 @@ class Summary(Strict):
     transfers: int
 
 
+class RouteOption(Strict):
+    id: str
+    label: str  # e.g. "Fastest", "Least rolling"
+    summary: Summary
+    legs: list[Leg]
+
+
 class PlanResponse(Strict):
     mode: TravelMode | None = None
     parsed_request: ParsedRequest | None
@@ -127,6 +135,8 @@ class PlanResponse(Strict):
     legs: list[Leg]
     rerouted: bool
     reroute: Reroute | None
+    # All candidates, best first. options[0] mirrors summary/legs above.
+    options: list[RouteOption] | None = None
 
 
 # ───────────────────────── GET /layers ─────────────────────────

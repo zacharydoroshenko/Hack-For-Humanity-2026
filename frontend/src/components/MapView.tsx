@@ -12,6 +12,7 @@ import {
   type LayersResponse,
   type LngLat,
   type PlanResponse,
+  type RouteOption,
   type StopFeature,
 } from "../api/client";
 import type { Endpoint } from "../demoConfig";
@@ -43,10 +44,12 @@ const firstPoint = (c: ClosureFeature): LngLat =>
   c.geometry.type === "Point" ? c.geometry.coordinates : c.geometry.coordinates[0];
 
 // ───────── map pieces ─────────
-function ClickHandler({ pickMode, onPick }: { pickMode: PickMode; onPick: (mode: "from" | "to", p: LngLat) => void }) {
+type PickTarget = Exclude<PickMode, null>;
+
+function ClickHandler({ pickMode, onPick }: { pickMode: PickMode; onPick: (mode: PickTarget, p: LngLat) => void }) {
   useMapEvents({
     click: (e) => {
-      if (pickMode) onPick(pickMode, fromLatLng(e.latlng));
+      if (pickMode !== null) onPick(pickMode, fromLatLng(e.latlng));
     },
     contextmenu: (e) => onPick("to", fromLatLng(e.latlng)),
   });
@@ -54,7 +57,7 @@ function ClickHandler({ pickMode, onPick }: { pickMode: PickMode; onPick: (mode:
 }
 
 /** Zoom to the route (or focused leg) whenever it changes. */
-function FitBounds({ route, focusedLeg }: { route: PlanResponse | null; focusedLeg: number | null }) {
+function FitBounds({ route, focusedLeg }: { route: Pick<PlanResponse, "legs"> | null; focusedLeg: number | null }) {
   const map = useMap();
   useEffect(() => {
     if (!route) return;
@@ -67,16 +70,21 @@ function FitBounds({ route, focusedLeg }: { route: PlanResponse | null; focusedL
 
 interface Props {
   layers: LayersResponse | null;
-  route: PlanResponse | null;
+  /** The selected route option (legs drive the map) */
+  route: Pick<PlanResponse, "legs"> | null;
+  /** Other route options, drawn faintly; click to select */
+  alternatives: { index: number; option: RouteOption }[];
+  onSelectAlternative: (index: number) => void;
+  via: (Endpoint | null)[];
   from: Endpoint | null;
   to: Endpoint | null;
   pickMode: PickMode;
-  onPick: (mode: "from" | "to", p: LngLat) => void;
+  onPick: (mode: PickTarget, p: LngLat) => void;
   focusedLeg: number | null;
   showAll: boolean;
 }
 
-export default function MapView({ layers, route, from, to, pickMode, onPick, focusedLeg, showAll }: Props) {
+export default function MapView({ layers, route, alternatives, onSelectAlternative, via, from, to, pickMode, onPick, focusedLeg, showAll }: Props) {
   /** Only what matters for the current route; everything when showAll is on. */
   const visible = useMemo(() => {
     const stops = layers?.stops.features ?? [];
@@ -144,6 +152,19 @@ export default function MapView({ layers, route, from, to, pickMode, onPick, foc
       <FitBounds route={route} focusedLeg={focusedLeg} />
       <ZoomControlBottomRight />
 
+      {alternatives.map(({ index, option }) => (
+        <Polyline
+          key={`alt-${option.id}`}
+          positions={option.legs.flatMap((l) => l.geometry.coordinates).map(toLatLng)}
+          pathOptions={{ color: "#64748b", weight: 6, opacity: 0.45, lineCap: "round" }}
+          eventHandlers={{ click: () => onSelectAlternative(index) }}
+        >
+          <Tooltip sticky>
+            {option.label}: {Math.round(option.summary.duration_min)} min. Click to choose.
+          </Tooltip>
+        </Polyline>
+      ))}
+
       {routeLines}
 
       {visible.stops.map((f) => {
@@ -207,6 +228,13 @@ export default function MapView({ layers, route, from, to, pickMode, onPick, foc
         );
       })}
 
+      {via.map((v, i) =>
+        v ? (
+          <Marker key={`via-${i}`} position={toLatLng(v.coord)} icon={stopNumberIcon(i + 1)} zIndexOffset={2000}>
+            <Tooltip direction="top" offset={[0, -14]}>Stop {i + 1}: {v.label}</Tooltip>
+          </Marker>
+        ) : null,
+      )}
       {from && (
         <Marker position={toLatLng(from.coord)} icon={markerIcon("start")} zIndexOffset={2000}>
           <Tooltip direction="top" offset={[0, -12]}>Start: {from.label}</Tooltip>
@@ -259,4 +287,20 @@ function VectorBasemap() {
     };
   }, [map]);
   return null;
+}
+
+const stopIconCache = new Map<number, L.DivIcon>();
+/** Numbered circle for intermediate stops */
+function stopNumberIcon(n: number): L.DivIcon {
+  let icon = stopIconCache.get(n);
+  if (!icon) {
+    icon = L.divIcon({
+      className: "svg-marker",
+      html: `<svg viewBox="0 0 26 26" width="26" height="26"><circle cx="13" cy="13" r="11" fill="#0f172a" stroke="#fff" stroke-width="2.5"/><text x="13" y="17.5" text-anchor="middle" font-size="13" font-weight="700" fill="#fff" font-family="system-ui,sans-serif">${n}</text></svg>`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+    });
+    stopIconCache.set(n, icon);
+  }
+  return icon;
 }

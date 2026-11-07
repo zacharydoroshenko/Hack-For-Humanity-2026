@@ -250,15 +250,16 @@ interface Trip {
   board?: Station;
   alight?: Station;
   total: number;
+  /** estimated metres of rolling */
+  walkM: number;
 }
 
-function planTrip(from: LngLat, to: LngLat, toName: string, opts: WalkOpts, closures: ClosureFeature[], preferStopIds: Set<string>): Trip {
+/** Every way to do one segment (roll-only + each usable station pair), best first. Legs are built later. */
+function candidates(from: LngLat, to: LngLat, opts: WalkOpts, closures: ClosureFeature[], preferStopIds: Set<string>): Trip[] {
   const blocked = blockedStopIds(closures);
   const usable = STATIONS.filter((s) => !blocked.has(s.stop_id) && s.exitGrade <= opts.max_grade);
-
-  const walkOnly = walkLeg(from, to, toName, opts);
-  let best: Trip = { legs: [walkOnly], total: walkOnly.duration_min };
-
+  const direct = haversine(from, to) * DETOUR_FACTOR;
+  const out: Trip[] = [{ legs: [], total: direct / ROLL_M_PER_MIN, walkM: direct }];
   for (const a of usable) {
     for (const b of usable) {
       if (a === b) continue;
@@ -266,19 +267,62 @@ function planTrip(from: LngLat, to: LngLat, toName: string, opts: WalkOpts, clos
       const w2 = haversine(b.coord, to) * DETOUR_FACTOR;
       const bonus = preferStopIds.has(a.stop_id) || preferStopIds.has(b.stop_id) ? -3 : 0;
       const total = w1 / ROLL_M_PER_MIN + AVG_WAIT_MIN + Math.abs(a.minute - b.minute) + w2 / ROLL_M_PER_MIN + bonus;
-      if (total < best.total) best = { legs: [], board: a, alight: b, total };
+      out.push({ legs: [], board: a, alight: b, total, walkM: w1 + w2 });
     }
   }
-
-  if (best.board && best.alight) {
-    best.legs = [
-      walkLeg(from, best.board.coord, best.board.name, opts, { s: best.board, boarding: true }),
-      transitLeg(best.board, best.alight),
-      walkLeg(best.alight.coord, to, toName, opts, { s: best.alight, boarding: false }),
-    ];
-  }
-  return best;
+  return out.sort((x, y) => x.total - y.total);
 }
+
+type Strategy = "fastest" | "least_rolling" | "alternate" | "roll_only";
+const STRATEGY_LABEL: Record<Strategy, string> = {
+  fastest: "Fastest",
+  least_rolling: "Least rolling",
+  alternate: "Other station",
+  roll_only: "Roll the whole way",
+};
+const ROLL_ONLY_MAX_MIN = 60;
+
+function pick(cands: Trip[], strategy: Strategy): Trip | null {
+  const best = cands[0];
+  if (strategy === "fastest") return best;
+  if (strategy === "alternate") {
+    // best trolley trip that uses a different station than the fastest one
+    return cands.find((c) => c.board && c !== best && (c.board !== best.board || c.alight !== best.alight) && c.total <= best.total + 20) ?? null;
+  }
+  if (strategy === "roll_only") {
+    const r = cands.find((c) => !c.board);
+    return r && r.total <= ROLL_ONLY_MAX_MIN ? r : null;
+  }
+  // least rolling: fewest metres among trips at most 15 min slower than the fastest
+  return cands.filter((c) => c.total <= best.total + 15).sort((a, b) => a.walkM - b.walkM)[0] ?? null;
+}
+
+function build(t: Trip, from: LngLat, to: LngLat, toName: string, opts: WalkOpts): Trip {
+  const legs: Leg[] =
+    t.board && t.alight
+      ? [
+          walkLeg(from, t.board.coord, t.board.name, opts, { s: t.board, boarding: true }),
+          transitLeg(t.board, t.alight),
+          walkLeg(t.alight.coord, to, toName, opts, { s: t.alight, boarding: false }),
+        ]
+      : [walkLeg(from, to, toName, opts)];
+  return { ...t, legs };
+}
+
+/** Plan [from, ...via, to] segment by segment with one strategy. null if the strategy doesn't apply. */
+function planChain(points: LngLat[], names: string[], opts: WalkOpts, closures: ClosureFeature[], prefer: Set<string>, strategy: Strategy): Trip[] | null {
+  const segs: Trip[] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const cands = candidates(points[i], points[i + 1], opts, closures, prefer);
+    // "Other station" only needs to differ somewhere; legs without an alternative use their fastest route
+    const t = pick(cands, strategy) ?? (strategy === "alternate" ? cands[0] : null);
+    if (!t) return null;
+    segs.push(build(t, points[i], points[i + 1], names[i + 1], opts));
+  }
+  return segs;
+}
+
+const chainKey = (segs: Trip[]) => segs.map((t) => `${t.board?.stop_id ?? "-"}>${t.alight?.stop_id ?? "-"}`).join("|");
 
 function summarize(legs: Leg[]) {
   const walk_m = legs.reduce((s, l) => s + (l.mode === "walk" ? l.distance_m : 0), 0);
@@ -344,25 +388,63 @@ export function mockPlan(req: PlanRequest): PlanResponse {
 
   const closures = activeClosures();
   const prefer = new Set([...ingested.values()].map((v) => v.alternative_stop_id).filter((x): x is string => !!x));
-  const actual = planTrip(from, to, toName, opts, closures, prefer);
-  const normal = planTrip(from, to, toName, opts, BASE_CLOSURES, new Set());
+  const via = req.via ?? [];
+  const points: LngLat[] = [from, ...via, to];
+  const names = ["start", ...via.map((_, i) => `stop ${i + 1}`), toName];
 
-  const changed = normal.board?.stop_id !== actual.board?.stop_id || normal.alight?.stop_id !== actual.alight?.stop_id;
+  // Candidate routes, best first, de-duplicated
+  const options: { strategy: Strategy; segs: Trip[] }[] = [];
+  const seen = new Set<string>();
+  for (const strategy of ["fastest", "least_rolling", "alternate", "roll_only"] as Strategy[]) {
+    const segs = planChain(points, names, opts, closures, prefer, strategy);
+    if (!segs || seen.has(chainKey(segs))) continue;
+    seen.add(chainKey(segs));
+    options.push({ strategy, segs });
+  }
+  const actualSegs = options[0].segs;
+  const normalSegs = planChain(points, names, opts, BASE_CLOSURES, new Set(), "fastest")!;
+
+  // Rerouted if an ingested outage blocks a station the no-outage plan would have used
   const blocked = blockedStopIds(closures);
+  const normalStops = new Set(normalSegs.flatMap((t) => [t.board?.stop_id, t.alight?.stop_id]).filter(Boolean) as string[]);
   const causes = [...ingested.values()]
     .map((v) => v.closure)
-    .filter((c) => c.properties.stop_id && blocked.has(c.properties.stop_id) &&
-      (c.properties.stop_id === normal.board?.stop_id || c.properties.stop_id === normal.alight?.stop_id));
+    .filter((c) => c.properties.stop_id && blocked.has(c.properties.stop_id) && normalStops.has(c.properties.stop_id));
+  const changedIdx = actualSegs.findIndex((t, i) => chainKey([t]) !== chainKey([normalSegs[i]]));
+  const rerouted = changedIdx >= 0 && causes.length > 0;
+
+  const legsOf = (segs: Trip[]) => segs.flatMap((t) => t.legs);
+  const routeOptions = options.map((o, i) => {
+    const legs = legsOf(o.segs);
+    let label = STRATEGY_LABEL[o.strategy];
+    if (o.strategy === "alternate") {
+      const t = o.segs.find((x, k) => x.board && chainKey([x]) !== chainKey([options[0].segs[k]]));
+      const f = options[0].segs[o.segs.indexOf(t!)];
+      if (t?.board && t.board !== f?.board) label = `Board at ${t.board.name.replace(/ Station$/, "")}`;
+      else if (t?.alight) label = `Get off at ${t.alight.name.replace(/ Station$/, "")}`;
+    }
+    return { id: `opt_${i}_${o.strategy}`, label, summary: summarize(legs), legs };
+  });
+  const legs = routeOptions[0].legs;
 
   return {
     mode,
     parsed_request: parsed,
-    summary: summarize(actual.legs),
-    legs: actual.legs,
-    rerouted: changed && causes.length > 0,
-    reroute: changed && causes.length > 0
-      ? { cause_closure_ids: causes.map((c) => c.properties.id), explanation: explain(normal, actual, causes), ai_generated: true }
+    summary: routeOptions[0].summary,
+    legs,
+    rerouted,
+    reroute: rerouted
+      ? {
+          cause_closure_ids: causes.map((c) => c.properties.id),
+          explanation: explain(
+            { ...normalSegs[changedIdx], legs: legsOf(normalSegs) },
+            { ...actualSegs[changedIdx], legs },
+            causes,
+          ),
+          ai_generated: true,
+        }
       : null,
+    options: routeOptions,
   };
 }
 

@@ -1,6 +1,6 @@
 import type { Endpoint } from "../demoConfig";
 import PlaceInput from "./PlaceInput";
-import { IconChevron, IconSliders, IconSwap } from "./Icons";
+import { IconChevron, IconPlus, IconSliders, IconSwap } from "./Icons";
 
 export interface SearchSettings {
   maxGrade: number;
@@ -8,7 +8,10 @@ export interface SearchSettings {
   showAllMapDetails: boolean;
 }
 
-export type PickMode = "from" | "to" | null;
+/** Which field the next map click fills: start, destination, or the index of an intermediate stop. */
+export type PickMode = "from" | "to" | number | null;
+
+export const MAX_STOPS = 3;
 
 interface Props {
   settings: SearchSettings;
@@ -17,6 +20,8 @@ interface Props {
   to: Endpoint | null;
   onFrom: (e: Endpoint | null) => void;
   onTo: (e: Endpoint | null) => void;
+  via: (Endpoint | null)[];
+  onVia: (v: (Endpoint | null)[]) => void;
   pickMode: PickMode;
   onPickMode: (m: PickMode) => void;
   onSubmit: () => void;
@@ -30,8 +35,10 @@ const GRADE_PRESETS = [
 ];
 
 export default function SearchPanel(props: Props) {
-  const { settings, onChange, from, to, onFrom, onTo, pickMode, onPickMode, onSubmit, loading } = props;
+  const { settings, onChange, from, to, onFrom, onTo, via, onVia, pickMode, onPickMode, onSubmit, loading } = props;
   const canSubmit = !loading && !!from && !!to;
+  const togglePick = (m: Exclude<PickMode, null>) => onPickMode(pickMode === m ? null : m);
+  const pickLabel = pickMode === "from" ? "start" : pickMode === "to" ? "destination" : `stop ${(pickMode as number) + 1}`;
   const preset = GRADE_PRESETS.find((p) => Math.abs(settings.maxGrade - p.value) < 1e-4);
 
   return (
@@ -43,27 +50,44 @@ export default function SearchPanel(props: Props) {
       }}
     >
       <fieldset className="endpoints">
-        <legend className="sr-only">Start and destination</legend>
-        <div className="endpoint-rail" aria-hidden="true">
-          <span className="rail-start" />
-          <span className="rail-line" />
-          <span className="rail-end" />
-        </div>
+        <legend className="sr-only">Start, stops and destination</legend>
         <div className="endpoint-fields">
-          <PlaceInput
-            label="Start"
-            value={from}
-            onChange={onFrom}
-            picking={pickMode === "from"}
-            onPickOnMap={() => onPickMode(pickMode === "from" ? null : "from")}
-          />
-          <PlaceInput
-            label="Destination"
-            value={to}
-            onChange={onTo}
-            picking={pickMode === "to"}
-            onPickOnMap={() => onPickMode(pickMode === "to" ? null : "to")}
-          />
+          <div className="endpoint-row">
+            <span className="rail-dot rail-start" aria-hidden="true" />
+            <PlaceInput label="Start" value={from} onChange={onFrom} picking={pickMode === "from"} onPickOnMap={() => togglePick("from")} />
+          </div>
+          {via.map((v, i) => (
+            <div className="endpoint-row" key={i}>
+              <span className="rail-dot rail-stop" aria-hidden="true">{i + 1}</span>
+              <PlaceInput
+                label={`Stop ${i + 1}`}
+                value={v}
+                onChange={(e) => onVia(via.map((x, j) => (j === i ? e : x)))}
+                picking={pickMode === i}
+                onPickOnMap={() => togglePick(i)}
+                onRemove={() => {
+                  onVia(via.filter((_, j) => j !== i));
+                  if (typeof pickMode === "number") onPickMode(null);
+                }}
+              />
+            </div>
+          ))}
+          <div className="endpoint-row">
+            <span className="rail-dot rail-end" aria-hidden="true" />
+            <PlaceInput label="Destination" value={to} onChange={onTo} picking={pickMode === "to"} onPickOnMap={() => togglePick("to")} />
+          </div>
+          {via.length < MAX_STOPS && (
+            <button
+              type="button"
+              className="add-stop"
+              onClick={() => {
+                onVia([...via, null]);
+                onPickMode(via.length);
+              }}
+            >
+              <IconPlus size={18} /> Add stop
+            </button>
+          )}
         </div>
         <button
           type="button"
@@ -71,16 +95,17 @@ export default function SearchPanel(props: Props) {
           onClick={() => {
             onFrom(to);
             onTo(from);
+            onVia([...via].reverse());
           }}
-          aria-label="Swap start and destination"
-          title="Swap start and destination"
+          aria-label="Reverse the trip"
+          title="Reverse the trip"
         >
           <IconSwap size={18} />
         </button>
       </fieldset>
       {pickMode && (
         <p className="hint picking" role="status">
-          Click the map to set the {pickMode === "from" ? "start" : "destination"}. Press Esc to cancel.
+          Click the map to set the {pickLabel}, or type a place. Press Esc to cancel.
         </p>
       )}
 
