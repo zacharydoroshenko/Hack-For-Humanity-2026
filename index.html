@@ -34,9 +34,9 @@
       </div>
       <form id="plannerForm">
         <div class="field-row">
-          <label class="field"><span>FROM</span><input id="fromInput" list="stopOptions" placeholder="Choose an accessible stop" autocomplete="off" required><small id="fromHint"></small></label>
+          <label class="field"><span>FROM</span><div class="stop-picker"><input id="fromInput" list="stopOptions" placeholder="Choose an accessible stop" autocomplete="off" required><div class="stop-suggestions" id="fromSuggestions" role="listbox"></div></div><small id="fromHint"></small></label>
           <button class="swap-button" type="button" id="swapButton" aria-label="Swap origin and destination">⇄</button>
-          <label class="field"><span>TO</span><input id="toInput" list="stopOptions" placeholder="Choose an accessible stop" autocomplete="off" required><small id="toHint"></small></label>
+          <label class="field"><span>TO</span><div class="stop-picker"><input id="toInput" list="stopOptions" placeholder="Choose an accessible stop" autocomplete="off" required><div class="stop-suggestions" id="toSuggestions" role="listbox"></div></div><small id="toHint"></small></label>
           <button class="plan-button" type="submit">Find my route <span>→</span></button>
         </div>
         <datalist id="stopOptions"></datalist>
@@ -44,10 +44,10 @@
       <p class="data-note"><span>i</span> Using MTS GTFS wheelchair boarding data. Stops marked “unknown” are not included.</p>
     </section>
 
-    <section class="alert-banner" aria-live="polite">
-      <div class="alert-icon">!</div>
-      <div><strong>Live accessibility alert</strong><p>Grossmont Station elevators are currently out of service.</p></div>
-      <button type="button" id="alertDetails">See alternative <span>→</span></button>
+    <section class="alert-banner" id="alertBanner" aria-live="polite">
+      <div class="alert-icon">…</div>
+      <div><strong>Checking MTS accessibility alerts</strong><p id="alertSummary">Connecting to the live feed…</p></div>
+      <button type="button" id="alertDetails" hidden>See alternative <span>→</span></button>
     </section>
 
     <section id="results" class="results" aria-live="polite">
