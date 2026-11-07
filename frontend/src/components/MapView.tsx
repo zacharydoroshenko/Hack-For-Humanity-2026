@@ -1,4 +1,5 @@
-import { CircleMarker, LayerGroup, LayersControl, MapContainer, Marker, Polyline, Popup, TileLayer, useMapEvents } from "react-leaflet";
+import { useEffect } from "react";
+import { CircleMarker, LayerGroup, LayersControl, MapContainer, Marker, Polyline, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { toLatLng, fromLatLng, type LayersResponse, type LngLat, type PlanResponse } from "../api/client";
 
@@ -30,6 +31,18 @@ function ClickToPick({ onPickFrom, onPickTo }: { onPickFrom: (p: LngLat) => void
   return null;
 }
 
+function FitRoute({ route, from, to }: { route: PlanResponse | null; from: LngLat | null; to: LngLat | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const coordinates = route?.legs.flatMap((leg) => leg.geometry.coordinates) ?? [from, to].filter((point): point is LngLat => point !== null);
+    if (coordinates.length < 2) return;
+    map.fitBounds(coordinates.map(toLatLng), { padding: [32, 32], maxZoom: 15 });
+  }, [from, map, route, to]);
+
+  return null;
+}
+
 interface Props {
   layers: LayersResponse | null;
   route: PlanResponse | null;
@@ -47,6 +60,7 @@ export default function MapView({ layers, route, from, to, onPickFrom, onPickTo 
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <ClickToPick onPickFrom={onPickFrom} onPickTo={onPickTo} />
+      <FitRoute route={route} from={from} to={to} />
 
       {from && <Marker position={toLatLng(from)} icon={ICONS.from} />}
       {to && <Marker position={toLatLng(to)} icon={ICONS.to} />}

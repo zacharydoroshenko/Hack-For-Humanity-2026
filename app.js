@@ -18,6 +18,8 @@ const alertDetails = document.querySelector("#alertDetails");
 const alertsUrl = "https://mna.mecatran.com/utw/ws/gtfsfeed/alerts/sdmts?apiKey=78161d20210d221e242d3f62056b1e764469525a&asText=true";
 let liveAlerts = [];
 let currentBannerAlert = null;
+let routeMap = null;
+let mapLayers = [];
 
 // Keep the datalist useful without rendering duplicate stop names thousands of times.
 const visibleStops = [...stopsByName.values()].map(group => group[0]).sort((a, b) => a.name.localeCompare(b.name));
@@ -230,17 +232,77 @@ function routeOptions(fromName, toName) {
 function journeyStopCount(journey) {
   return journey.legs.reduce((count, leg) => count + leg.stops.length - 1, 0);
 }
+function clearMap() {
+  mapLayers.forEach(layer => layer.remove());
+  mapLayers = [];
+}
+function renderMap(journey, from, to) {
+  if (!window.L) return;
+  const mapElement = document.querySelector("#routeMap");
+  if (!routeMap) {
+    routeMap = L.map(mapElement, { scrollWheelZoom: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(routeMap);
+  }
+  clearMap();
+  const bounds = [];
+  const colors = journey.legs.map(leg => leg.route.color || "#668000");
+  journey.legs.forEach((leg, legIndex) => {
+    const points = leg.stops.map(stopId => {
+      const stop = stops.get(stopId);
+      return [stop.lat, stop.lon];
+    });
+    points.forEach(point => bounds.push(point));
+    const line = L.polyline(points, {
+      color: colors[legIndex],
+      weight: 6,
+      opacity: 0.88,
+      lineCap: "round",
+      lineJoin: "round"
+    }).addTo(routeMap);
+    line.bindTooltip(`Route ${leg.route.shortName}`, { sticky: true });
+    mapLayers.push(line);
+  });
+  journey.legs.forEach((leg, legIndex) => {
+    const start = stops.get(leg.stops[0]);
+    const end = stops.get(leg.stops.at(-1));
+    const marker = L.circleMarker([start.lat, start.lon], {
+      radius: legIndex === 0 ? 8 : 7,
+      color: "#fff",
+      weight: 3,
+      fillColor: legIndex === 0 ? "#668000" : colors[legIndex],
+      fillOpacity: 1
+    }).bindPopup(`<strong>${legIndex === 0 ? "Board" : "Transfer"}: ${escapeHtml(start.name)}</strong><br>Route ${escapeHtml(leg.route.shortName)}`);
+    marker.addTo(routeMap);
+    mapLayers.push(marker);
+    if (legIndex === journey.legs.length - 1) {
+      const destination = L.circleMarker([end.lat, end.lon], {
+        radius: 8, color: "#fff", weight: 3, fillColor: "#203b4b", fillOpacity: 1
+      }).bindPopup(`<strong>Exit: ${escapeHtml(to.name)}</strong><br>Accessible stop geometry`);
+      destination.addTo(routeMap);
+      mapLayers.push(destination);
+    }
+  });
+  if (bounds.length) routeMap.fitBounds(bounds, { padding: [28, 28] });
+  window.setTimeout(() => routeMap.invalidateSize(), 0);
+}
 function renderRoutes(routes, from, to) {
   resultCount.textContent = `${routes.length} accessible ${routes.length === 1 ? "option" : "options"}`;
   if (!routes.length) {
+    clearMap();
+    document.querySelector(".map-panel").classList.remove("visible");
     resultBox.innerHTML = `<div class="empty"><strong>No accessible journey found.</strong><br>Try a nearby accessible stop. We searched direct trips and journeys with up to two transfers in the loaded MTS network.</div>`;
     return;
   }
   const availableRoutes = routes.filter(journey => !journey.legs.some(leg =>
     liveAlerts.some(alert => relevantAlert(alert) && alertAffectsRoute(alert, leg.route, leg.stops))));
   const displayRoutes = availableRoutes.length ? availableRoutes : routes;
+  document.querySelector(".map-panel").classList.add("visible");
   resultCount.textContent = `${displayRoutes.length} accessible ${displayRoutes.length === 1 ? "option" : "options"}`;
-  resultBox.innerHTML = displayRoutes.slice(0, 3).map((option, index) => {
+  const visibleRoutes = displayRoutes.slice(0, 3);
+  resultBox.innerHTML = visibleRoutes.map((option, index) => {
     const routesForJourney = option.legs.map(leg => leg.route);
     const affectedAlert = liveAlerts.find(alert => relevantAlert(alert) && option.legs.some(leg =>
       alertAffectsRoute(alert, leg.route, leg.stops)));
@@ -253,7 +315,7 @@ function renderRoutes(routes, from, to) {
     const journeyDescription = option.legs.length === 1
       ? `${journeyStopCount(option)} stop${journeyStopCount(option) === 1 ? "" : "s"} · direct ride`
       : `${option.legs.length - 1} transfer${option.legs.length > 2 ? "s" : ""} · ${journeyStopCount(option)} stops`;
-    return `<article class="route-card ${index === 0 ? "recommended" : ""}">
+    return `<article class="route-card ${index === 0 ? "recommended" : ""}" data-index="${index}">
       ${index === 0 ? '<span class="recommend">BEST MATCH</span>' : ""}
       <div class="route-label">${routeLabels}<span>${routesForJourney.map(route => `Route ${escapeHtml(route.shortName)}`).join(" + ")}</span></div>
       <h3>${escapeHtml(from.name)} → ${escapeHtml(to.name)}</h3>
@@ -264,7 +326,21 @@ function renderRoutes(routes, from, to) {
       <button class="route-action" data-route="${escapeHtml(routesForJourney.map(route => route.shortName).join(" + "))}" data-alert-id="${escapeHtml(affectedAlert?.id || "")}">${affectedAlert ? "See live alert" : "View step-by-step trip"} <span>→</span></button>
     </article>`;
   }).join("");
+  renderMap(visibleRoutes[0], from, to);
+  resultBox.querySelectorAll(".route-card").forEach((card, index) => {
+    card.addEventListener("click", event => {
+      if (event.target.closest(".route-action")) return;
+      resultBox.querySelectorAll(".route-card").forEach(item => item.classList.remove("selected"));
+      card.classList.add("selected");
+      renderMap(visibleRoutes[index], from, to);
+    });
+  });
+  resultBox.querySelector(".route-card")?.classList.add("selected");
   resultBox.querySelectorAll(".route-action").forEach(button => button.addEventListener("click", () => {
+    const selectedIndex = Number(button.closest(".route-card").dataset.index);
+    resultBox.querySelectorAll(".route-card").forEach(item => item.classList.remove("selected"));
+    button.closest(".route-card").classList.add("selected");
+    renderMap(visibleRoutes[selectedIndex], from, to);
     const alert = liveAlerts.find(item => item.id === button.dataset.alertId);
     showToast(alert ? alertMessage(alert) : `Route ${button.dataset.route} is wheelchair-accessible from boarding to exit.`);
   }));

@@ -71,6 +71,9 @@ Then open <http://localhost:8080>.
 - Nearby accessible-stop fallback within 800 meters, so a rider can walk to a
   practical boarding platform when the selected stop only has service in one
   direction.
+- An interactive Leaflet/OpenStreetMap map showing the selected accessible
+  journey, route-colored transit legs, boarding point, transfer points, and
+  destination.
 - Multiple-platform handling when several stop IDs share a station name.
 - A live MTS alert banner with plain-language guidance taken from the alert
   description, including suggested alternatives when the feed provides them.
@@ -89,6 +92,11 @@ seconds. If the endpoint blocks browser CORS or is unavailable, the UI keeps
 the static accessible planner available and clearly reports that real-time
 rerouting is unavailable. A production deployment should proxy this feed
 server-side rather than expose the feed key in client code.
+
+The map currently draws the selected route from MTS stop coordinates. It does
+not yet claim that the line between stops is a wheelchair-safe sidewalk path;
+the City's curb-ramp and sidewalk layers should be used to replace or augment
+that geometry once imported.
 
 ### Next data integrations
 

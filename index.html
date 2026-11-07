@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <header class="topbar">
@@ -52,6 +53,11 @@
 
     <section id="results" class="results" aria-live="polite">
       <div class="section-heading"><div><p class="eyebrow">YOUR ACCESSIBLE OPTIONS</p><h2>Start with a trip you can trust.</h2></div><span id="resultCount" class="result-count"></span></div>
+      <div class="map-panel">
+        <div class="map-heading"><div><strong>Follow your accessible journey</strong><span>Transit legs and transfer points</span></div><span class="map-note">Stop geometry from MTS GTFS</span></div>
+        <div id="routeMap" class="route-map" role="img" aria-label="Map of the selected accessible journey"></div>
+        <div class="map-legend"><span><i class="legend-origin"></i>Board here</span><span><i class="legend-transfer"></i>Transfer</span><span><i class="legend-destination"></i>Exit here</span></div>
+      </div>
       <div id="routeResults" class="route-results"></div>
     </section>
 
@@ -66,6 +72,7 @@
   </main>
   <footer><span class="brand"><span class="brand-mark">↗</span> wayfinder</span><span>Built for Hack for Humanity · San Diego</span><span>Data source: MTS GTFS</span></footer>
   <div id="toast" class="toast" role="status"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
