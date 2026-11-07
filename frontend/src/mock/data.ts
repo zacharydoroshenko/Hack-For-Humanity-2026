@@ -141,18 +141,6 @@ const st = (id: string) => STATIONS.find((s) => s.stop_id === id)!;
 /** The frontend's list of demo alerts. Keep filenames in sync with data/demo_alerts/. */
 export const DEMO_ALERTS: DemoAlert[] = [
   {
-    file: "old_town_elevator.json",
-    label: "Old Town elevator out",
-    alternative_stop_id: "75076",
-    closure: alertClosure(
-      "c_alert_oldtown_elev", st("75042"), "elevator_outage",
-      "Elevator out at Old Town Station",
-      "The elevator between the trolley platform and street level is out of service.",
-      "Use Washington Street Station",
-      "ELEVATOR OUTAGE: Old Town Transit Center elevator is temporarily out of service. Customers requiring elevator access should use Washington St Station. We apologize for the inconvenience. (dummy alert)",
-    ),
-  },
-  {
     file: "ucsd_central_elevator.json",
     label: "UCSD Central Campus elevator out",
     alternative_stop_id: "77780",
@@ -162,6 +150,18 @@ export const DEMO_ALERTS: DemoAlert[] = [
       "Both platform elevators at UC San Diego Central Campus Station are out of service.",
       "Use VA Medical Center Station",
       "UC San Diego Central Campus Stn - elevators out of service until further notice. Riders needing elevators pls use VA Medical Center Stn. (dummy alert)",
+    ),
+  },
+  {
+    file: "old_town_elevator.json",
+    label: "Old Town elevator out",
+    alternative_stop_id: "75076",
+    closure: alertClosure(
+      "c_alert_oldtown_elev", st("75042"), "elevator_outage",
+      "Elevator out at Old Town Station",
+      "The elevator between the trolley platform and street level is out of service.",
+      "Use Washington Street Station",
+      "ELEVATOR OUTAGE: Old Town Transit Center elevator is temporarily out of service. Customers requiring elevator access should use Washington St Station. We apologize for the inconvenience. (dummy alert)",
     ),
   },
   {

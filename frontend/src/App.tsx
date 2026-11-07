@@ -12,7 +12,7 @@ import {
   type LngLat,
   type PlanResponse,
 } from "./api/client";
-import { HAPPY_PATH, PLACES, type Endpoint } from "./demoConfig";
+import { DEMO_ALERT_OPTIONS, HAPPY_PATH, PLACES, type Endpoint } from "./demoConfig";
 import logoUrl from "./assets/logo.svg";
 import MapView from "./components/MapView";
 import SearchPanel, { type PickMode, type SearchSettings } from "./components/SearchPanel";
@@ -60,11 +60,6 @@ export default function App() {
     getHealth().then(setHealth).catch(() => setHealth({ ok: false, gemini: false }));
   }, [refreshLayers]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPickMode(null);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   /** Transit trip (walk/roll + Blue Line). The planner returns a roll-only route when the trolley doesn't help. */
   const runPlan = useCallback(async () => {
@@ -117,6 +112,31 @@ export default function App() {
     await refreshLayers();
   };
 
+  // ── demo hotkeys: 1/2/3 replay alerts, 0 reset, P plan, D toggle demo panel, Esc cancel map pick ──
+  const [showDemo, setShowDemo] = useState(false);
+  const hotkeyActions = useRef({ simulate, reset, plan: runPlan });
+  hotkeyActions.current = { simulate, reset, plan: runPlan };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return setPickMode(null);
+      const t = e.target as HTMLElement | null;
+      const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
+      if (!DEMO_MODE || typing || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+      const a = hotkeyActions.current;
+      const k = e.key.toLowerCase();
+      const idx = ["1", "2", "3"].indexOf(k);
+      if (idx >= 0 && DEMO_ALERT_OPTIONS[idx]) a.simulate(DEMO_ALERT_OPTIONS[idx].file);
+      else if (k === "0") a.reset();
+      else if (k === "p") a.plan();
+      else if (k === "d") setShowDemo((v) => !v);
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   const activeOutages = layers?.closures.features.filter((c) => c.properties.source === "mts_alerts") ?? [];
   const statusText = usingFixtures
     ? "Demo data"
@@ -166,7 +186,7 @@ export default function App() {
           </p>
         )}
 
-        {DEMO_MODE && <DemoControls onSimulate={simulate} onReset={reset} busy={alertBusy} />}
+        {DEMO_MODE && showDemo && <DemoControls onSimulate={simulate} onReset={reset} busy={alertBusy} />}
       </aside>
 
       <main className="map-wrap" aria-label="Map">

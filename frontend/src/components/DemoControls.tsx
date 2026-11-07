@@ -12,6 +12,14 @@ export default function DemoControls({ onSimulate, onReset, busy }: Props) {
   return (
     <section className="demo-controls" aria-label="Demo controls">
       <h2 className="small-heading">Demo: replay an MTS alert</h2>
+      <ul className="hotkeys" aria-label="Demo hotkeys">
+        {DEMO_ALERT_OPTIONS.map((a, i) => (
+          <li key={a.file}><kbd>{i + 1}</kbd> {a.label}</li>
+        ))}
+        <li><kbd>0</kbd> Reset</li>
+        <li><kbd>P</kbd> Plan trip</li>
+        <li><kbd>D</kbd> Hide this panel</li>
+      </ul>
       <label htmlFor="demo-alert" className="sr-only">Alert to replay</label>
       <select id="demo-alert" value={file} onChange={(e) => setFile(e.target.value)}>
         {DEMO_ALERT_OPTIONS.map((a) => (
