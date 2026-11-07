@@ -1,20 +1,68 @@
-# Wayfinder MVP
+# Accessible Trip Planner (San Diego)
 
-Wayfinder is a wheelchair-aware San Diego trip planner prototype built from the
-MTS GTFS feed in [`google_transit/`](./google_transit/).
+> DS3 × AIC Hack Day: Hack for Humanity · Nov 7, 2026
 
-## Run locally
+**Problem:** A wheelchair user takes the trolley, and the station elevator is out. MTS posts
+these outages, but they're buried in an alerts feed and no trip planner reroutes around them.
+Missing curb ramps and steep hills make the walk to and from the station hard too.
 
-Because the browser loads the generated GTFS index as a script, serve the
-repository over HTTP:
+**What it does:** Plans walk + Blue Line trips that avoid inaccessible stops, active elevator
+outages, and missing curb ramps. When an outage alert arrives, **Gemini reads it**, figures out
+what's broken and what MTS suggests instead, and the route changes with a plain-English explanation.
+
+**How it works:** see [ARCHITECTURE.md](ARCHITECTURE.md).
+**What the AI did:** see [AI_USAGE.md](AI_USAGE.md).
+
+## Data
+MTS GTFS · MTS alerts feed · City of San Diego ADA curb ramps (Mobility Element streets only) ·
+OpenStreetMap (via osmnx) · *(stretch)* USGS 3DEP elevation, Get It Done reports.
+
+## Run it
 
 ```bash
-python3 -m http.server 8000
+# backend (repo root)
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env            # add GEMINI_API_KEY
+uvicorn backend.main:app --reload --port 8000
+
+# check the contract
+python -m shared.check_contract          # fixtures
+python -m shared.check_contract --live   # running backend
+
+# frontend
+cd frontend && npm install
+npm run dev:fixtures            # no backend needed
+npm run dev                     # against localhost:8000
+# demo controls: http://localhost:5173/?demo=1
 ```
 
-Then open <http://localhost:8000>.
+## Data pipeline (partner)
+```bash
+python -m pipeline.fetch.osm          # slow: start first
+python -m pipeline.fetch.curb_ramps
+python -m pipeline.fetch.alerts       # save elevator alerts to data/demo_alerts/
+python -m pipeline.build_db
+```
 
-## What is included
+## Wayfinder MVP (static prototype)
+
+A wheelchair-aware trip planner prototype built from the MTS GTFS feed in
+[`google_transit/`](./google_transit/), running without the backend
+(`index.html`, `app.js`, `data.js`, `styles.css` at the repo root).
+
+### Run locally
+
+Because the browser loads the generated GTFS index as a script, serve the
+repository over HTTP. Use a port other than 8000 so it doesn't clash with the backend:
+
+```bash
+python3 -m http.server 8080
+```
+
+Then open <http://localhost:8080>.
+
+### What is included
 
 - Accessible-stop search using `stops.wheelchair_boarding=1`.
 - Direct-trip matching across wheelchair-accessible GTFS trips.
@@ -42,10 +90,15 @@ the static accessible planner available and clearly reports that real-time
 rerouting is unavailable. A production deployment should proxy this feed
 server-side rather than expose the feed key in client code.
 
-## Next data integrations
+### Next data integrations
 
 The current planner intentionally does not claim that a route is fully
 wheelchair-completable on sidewalks. The next integrations should add the
 City's curb-ramp layer, MTS live elevator alerts, and a sidewalk photo
 classification/reporting endpoint. Those datasets should become constraints in
 the route matcher rather than only UI warnings.
+
+## Team
+- UI: Zach
+- Data + AI: _partner_
+- Demo + docs: _3rd member_

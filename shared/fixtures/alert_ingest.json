@@ -1,0 +1,18 @@
+{
+  "closure": {
+    "type": "Feature",
+    "geometry": { "type": "Point", "coordinates": [-117.19949, 32.75491] },
+    "properties": {
+      "id": "c_alert_oldtown_elev",
+      "kind": "elevator_outage",
+      "severity": "blocking",
+      "title": "Elevator out at Old Town Station",
+      "description": "The elevator between the trolley platform and street level is out of service.",
+      "alternative": "Use Washington Street Station",
+      "stop_id": "75042",
+      "source": "mts_alerts",
+      "raw_text": "SAMPLE (replace with a saved real alert): Old Town Transit Center elevator out of service. Customers needing elevator access please use Washington St Station.",
+      "ai_generated": true
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "stops": {
+    "type": "FeatureCollection",
+    "features": [
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.23178, 32.87844] }, "properties": { "stop_id": "77782", "name": "UCSD Central Campus Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.22350, 32.88182] }, "properties": { "stop_id": "77784", "name": "UCSD Health La Jolla Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.22982, 32.87425] }, "properties": { "stop_id": "77780", "name": "VA Medical Center Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.23039, 32.86697] }, "properties": { "stop_id": "77778", "name": "Nobel Drive Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.21407, 32.80586] }, "properties": { "stop_id": "77775", "name": "Balboa Avenue Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.20613, 32.79006] }, "properties": { "stop_id": "77773", "name": "Clairemont Drive Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.20506, 32.76991] }, "properties": { "stop_id": "77771", "name": "Tecolote Road Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.19949, 32.75491] }, "properties": { "stop_id": "75042", "name": "Old Town Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": ["c_alert_oldtown_elev"] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.18447, 32.74172] }, "properties": { "stop_id": "75076", "name": "Washington Street Station", "wheelchair_boarding": 0, "is_blue_line": true, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.22343, 32.86152] }, "properties": { "stop_id": "11154", "name": "Arriba St & Regents Rd", "wheelchair_boarding": 1, "is_blue_line": false, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.20056, 32.81162] }, "properties": { "stop_id": "10421", "name": "Balboa Av & Clairemont Dr", "wheelchair_boarding": 1, "is_blue_line": false, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.21070, 32.80774] }, "properties": { "stop_id": "10045", "name": "Balboa Av & Moraga Av", "wheelchair_boarding": 2, "is_blue_line": false, "active_closure_ids": [] } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.22571, 32.80345] }, "properties": { "stop_id": "10386", "name": "Garnet Av & Fogg St", "wheelchair_boarding": 2, "is_blue_line": false, "active_closure_ids": [] } }
+    ]
+  },
+  "closures": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": { "type": "Point", "coordinates": [-117.19949, 32.75491] },
+        "properties": {
+          "id": "c_alert_oldtown_elev",
+          "kind": "elevator_outage",
+          "severity": "blocking",
+          "title": "Elevator out at Old Town Station",
+          "description": "The elevator between the trolley platform and street level is out of service.",
+          "alternative": "Use Washington Street Station",
+          "stop_id": "75042",
+          "source": "mts_alerts",
+          "raw_text": "SAMPLE (replace with a saved real alert): Old Town Transit Center elevator out of service. Customers needing elevator access please use Washington St Station.",
+          "ai_generated": true
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": { "type": "LineString", "coordinates": [[-117.2005, 32.7470], [-117.1985, 32.7488]] },
+        "properties": {
+          "id": "c_steep_sample",
+          "kind": "steep_segment",
+          "severity": "warning",
+          "title": "Steep sidewalk (7% grade)",
+          "description": "SAMPLE: grade above the 5% comfort limit.",
+          "alternative": null,
+          "stop_id": null,
+          "source": "usgs",
+          "raw_text": null,
+          "ai_generated": false
+        }
+      }
+    ]
+  },
+  "curb_ramps": {
+    "type": "FeatureCollection",
+    "features": [
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.1900, 32.7465] }, "properties": { "id": "ramp_sample_1", "description": "SAMPLE: missing curb ramp, Hancock St & Washington St" } },
+      { "type": "Feature", "geometry": { "type": "Point", "coordinates": [-117.2210, 32.8030] }, "properties": { "id": "ramp_sample_2", "description": "SAMPLE: non-compliant curb ramp" } }
+    ]
+  }
+}

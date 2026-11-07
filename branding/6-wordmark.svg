@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="360" height="120">
+  <text x="20" y="72" font-family="Helvetica, Arial, sans-serif" font-size="46" font-weight="300" letter-spacing="1" fill="#0F172A"><tspan font-weight="700">safe</tspan><tspan font-weight="400" fill="#0891B2">route</tspan></text>
+  <path d="M22 92 C80 80 120 104 180 92 S280 84 338 94" fill="none" stroke="#0891B2" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 9"/>
+  <circle cx="338" cy="94" r="6" fill="#0891B2"/>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "bbox": [-117.245, 32.735, -117.180, 32.885],
+  "bbox_order": "minLon, minLat, maxLon, maxLat",
+  "api_base_url_env": "VITE_API_URL",
+  "default_api_base_url": "http://localhost:8000",
+  "blue_line_route_id": "510",
+  "default_max_grade": 0.05,
+  "ada_max_grade": 0.0833,
+  "closure_kinds": [
+    "elevator_outage",
+    "stop_closure",
+    "missing_curb_ramp",
+    "steep_segment",
+    "reported_hazard"
+  ],
+  "closure_severities": ["blocking", "warning"],
+  "closure_sources": ["mts_alerts", "city_ada", "usgs", "get_it_done"],
+  "warning_types": ["unverified", "steep", "hazard", "missing_curb_ramp"]
+}

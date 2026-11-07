@@ -1,0 +1,19 @@
+# secrets
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# node
+node_modules/
+frontend/dist/
+
+# data: commit app.db, walk_graph.graphml, demo_alerts/; ignore raw downloads
+data/raw/
+
+# event materials
+*.pptx
+
+.DS_Store
