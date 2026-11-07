@@ -1,0 +1,49 @@
+{
+  "alert": {
+    "id": "c_alert_balboa_closed",
+    "alert": {
+      "informed_entity": [
+        {
+          "stop_id": "77775"
+        }
+      ],
+      "header_text": {
+        "translation": [
+          {
+            "text": "Balboa Avenue Station platform closed"
+          }
+        ]
+      },
+      "description_text": {
+        "translation": [
+          {
+            "text": "Balboa Ave Station: SB platform closed for track work 9am-6pm today. Trains will pass through without stopping. (dummy alert)"
+          }
+        ]
+      }
+    }
+  },
+  "alternative_stop_id": null,
+  "closure": {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -117.21407,
+        32.80586
+      ]
+    },
+    "properties": {
+      "id": "c_alert_balboa_closed",
+      "kind": "stop_closure",
+      "severity": "blocking",
+      "title": "Balboa Avenue Station platform closed",
+      "description": "Southbound platform closed for maintenance; trains will not stop.",
+      "alternative": null,
+      "stop_id": "77775",
+      "source": "mts_alerts",
+      "raw_text": "Balboa Ave Station: SB platform closed for track work 9am-6pm today. Trains will pass through without stopping. (dummy alert)",
+      "ai_generated": true
+    }
+  }
+}

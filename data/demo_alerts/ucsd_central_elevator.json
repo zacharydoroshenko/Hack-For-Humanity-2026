@@ -1,0 +1,49 @@
+{
+  "alert": {
+    "id": "c_alert_ucsd_elev",
+    "alert": {
+      "informed_entity": [
+        {
+          "stop_id": "77782"
+        }
+      ],
+      "header_text": {
+        "translation": [
+          {
+            "text": "Elevator out at UCSD Central Campus"
+          }
+        ]
+      },
+      "description_text": {
+        "translation": [
+          {
+            "text": "UC San Diego Central Campus Stn - elevators out of service until further notice. Riders needing elevators pls use VA Medical Center Stn. (dummy alert)"
+          }
+        ]
+      }
+    }
+  },
+  "alternative_stop_id": "77780",
+  "closure": {
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -117.23178,
+        32.87844
+      ]
+    },
+    "properties": {
+      "id": "c_alert_ucsd_elev",
+      "kind": "elevator_outage",
+      "severity": "blocking",
+      "title": "Elevator out at UCSD Central Campus",
+      "description": "Both platform elevators at UC San Diego Central Campus Station are out of service.",
+      "alternative": "Use VA Medical Center Station",
+      "stop_id": "77782",
+      "source": "mts_alerts",
+      "raw_text": "UC San Diego Central Campus Stn - elevators out of service until further notice. Riders needing elevators pls use VA Medical Center Stn. (dummy alert)",
+      "ai_generated": true
+    }
+  }
+}

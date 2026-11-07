@@ -237,9 +237,14 @@ Base URL comes from `VITE_API_URL`. Coordinates are **`[lon, lat]`**
   "from": [-117.2340, 32.8770],          // optional if text is given
   "to":   [-117.2003, 32.7546],
   "max_grade": 0.05,                     // ADA ramp max is 0.0833
-  "avoid_unverified": false
+  "avoid_unverified": false,
+  "mode": "transit"                      // transit | rideshare | drive | walk (default transit)
 }
 ```
+
+Legs can also be `{"mode": "drive" | "rideshare", geometry, distance_m, duration_min, steps, warnings, note}`
+(`CarLeg` in `shared/types.ts`). The UI plans all four modes in parallel and shows them as tabs. Outages
+only affect `transit`.
 
 ```jsonc
 // response

@@ -35,6 +35,9 @@ export type Severity = "blocking" | "warning";
 
 export type ClosureSource = "mts_alerts" | "city_ada" | "usgs" | "get_it_done";
 
+/** How the trip is made. Default "transit" (walk/roll + Blue Line). */
+export type TravelMode = "transit" | "rideshare" | "drive" | "walk";
+
 export type WarningType = "unverified" | "steep" | "hazard" | "missing_curb_ramp";
 
 // ───────────────────────── POST /plan ─────────────────────────
@@ -46,6 +49,7 @@ export interface PlanRequest {
   to?: LngLat;
   max_grade?: number; // default 0.05
   avoid_unverified?: boolean; // default false
+  mode?: TravelMode; // default "transit"
 }
 
 export interface ParsedRequest {
@@ -91,7 +95,18 @@ export interface TransitLeg {
   geometry: LineStringGeometry;
 }
 
-export type Leg = WalkLeg | TransitLeg;
+/** A car leg: driving yourself, or a wheelchair-accessible rideshare. */
+export interface CarLeg {
+  mode: "drive" | "rideshare";
+  geometry: LineStringGeometry;
+  distance_m: number;
+  duration_min: number; // includes rideshare pickup wait
+  steps: Step[];
+  warnings: RouteWarning[];
+  note: string | null; // e.g. "Request a wheelchair-accessible vehicle (WAV)"
+}
+
+export type Leg = WalkLeg | TransitLeg | CarLeg;
 
 export interface Reroute {
   cause_closure_ids: string[];
@@ -100,6 +115,8 @@ export interface Reroute {
 }
 
 export interface PlanResponse {
+  /** Echo of the requested mode (optional; absent means "transit"). */
+  mode?: TravelMode;
   parsed_request: ParsedRequest | null;
   summary: {
     duration_min: number;

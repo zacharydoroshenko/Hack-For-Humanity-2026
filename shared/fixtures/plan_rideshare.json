@@ -1,0 +1,38 @@
+{
+  "mode": "rideshare",
+  "parsed_request": null,
+  "summary": { "duration_min": 31, "walk_m": 40, "transfers": 0 },
+  "legs": [
+    {
+      "mode": "rideshare",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-117.2376, 32.8811],
+          [-117.2290, 32.8600],
+          [-117.2150, 32.8050],
+          [-117.2060, 32.7700],
+          [-117.1935, 32.7500]
+        ]
+      },
+      "distance_m": 17800,
+      "duration_min": 30,
+      "steps": [
+        { "instruction": "Wait about 9 min for a wheelchair-accessible vehicle", "distance_m": 0 },
+        { "instruction": "Ride to Old Town State Historic Park", "distance_m": 17800 }
+      ],
+      "warnings": [],
+      "note": "Request a wheelchair-accessible vehicle (WAV) in your rideshare app. Availability varies."
+    },
+    {
+      "mode": "walk",
+      "geometry": { "type": "LineString", "coordinates": [[-117.1935, 32.7500], [-117.1931, 32.7502]] },
+      "distance_m": 40,
+      "duration_min": 1,
+      "warnings": [],
+      "steps": [{ "instruction": "Arrive at Old Town State Historic Park", "distance_m": 40 }]
+    }
+  ],
+  "rerouted": false,
+  "reroute": null
+}

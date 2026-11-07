@@ -20,6 +20,7 @@ ClosureKind = Literal[
 ]
 Severity = Literal["blocking", "warning"]
 ClosureSource = Literal["mts_alerts", "city_ada", "usgs", "get_it_done"]
+TravelMode = Literal["transit", "rideshare", "drive", "walk"]
 WarningType = Literal["unverified", "steep", "hazard", "missing_curb_ramp"]
 
 
@@ -46,6 +47,7 @@ class PlanRequest(Strict):
     to: LngLat | None = None
     max_grade: float = 0.05
     avoid_unverified: bool = False
+    mode: TravelMode = "transit"
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
@@ -93,7 +95,17 @@ class TransitLeg(Strict):
     geometry: LineStringGeometry
 
 
-Leg = Annotated[Union[WalkLeg, TransitLeg], Field(discriminator="mode")]
+class CarLeg(Strict):
+    mode: Literal["drive", "rideshare"]
+    geometry: LineStringGeometry
+    distance_m: float
+    duration_min: float
+    steps: list[Step]
+    warnings: list[RouteWarning]
+    note: str | None
+
+
+Leg = Annotated[Union[WalkLeg, TransitLeg, CarLeg], Field(discriminator="mode")]
 
 
 class Reroute(Strict):
@@ -109,6 +121,7 @@ class Summary(Strict):
 
 
 class PlanResponse(Strict):
+    mode: TravelMode | None = None
     parsed_request: ParsedRequest | None
     summary: Summary
     legs: list[Leg]
