@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="360" height="120">
+  <g transform="translate(10,8)">
+    <path d="M52 4 L96 20 V54 C96 80 78 98 52 108 C26 98 8 80 8 54 V20 Z" fill="#0F766E"/>
+    <path d="M28 82 C28 62 50 66 50 50 C50 36 70 40 72 28" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 10"/>
+    <circle cx="28" cy="82" r="6" fill="#fff"/>
+    <circle cx="72" cy="28" r="7" fill="#FACC15"/>
+  </g>
+  <text x="125" y="72" font-family="Helvetica, Arial, sans-serif" font-size="40" font-weight="700" fill="#0F172A">Safe<tspan fill="#0F766E">Route</tspan></text>
+</svg>
