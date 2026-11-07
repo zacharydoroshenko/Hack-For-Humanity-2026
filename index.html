@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wayfinder | Accessible MTS trips</title>
+  <meta name="description" content="A wheelchair-aware trip planner for San Diego transit.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Wayfinder home"><span class="brand-mark">↗</span> wayfinder</a>
+    <span class="data-status"><span class="status-dot"></span> MTS data loaded · San Diego</span>
+    <button class="text-button" type="button" id="reportLink">Report a barrier <span>↗</span></button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">TRANSIT THAT DOESN'T MAKE YOU GUESS</p>
+        <h1>Move through<br><em>San Diego</em> with confidence.</h1>
+        <p class="hero-copy">Wayfinder filters out stops that aren't confirmed accessible and watches for service changes that could disrupt your trip.</p>
+      </div>
+      <div class="hero-orbit" aria-hidden="true"><div class="orbit-center">♿</div><span class="orbit-dot one"></span><span class="orbit-dot two"></span><span class="orbit-dot three"></span></div>
+    </section>
+
+    <section class="planner-card" aria-labelledby="planner-title">
+      <div class="card-heading">
+        <div><p class="eyebrow">PLAN A TRIP</p><h2 id="planner-title">Where are you headed?</h2></div>
+        <span class="accessibility-pill">✓ Accessible only</span>
+      </div>
+      <form id="plannerForm">
+        <div class="field-row">
+          <label class="field"><span>FROM</span><input id="fromInput" list="stopOptions" placeholder="Choose an accessible stop" autocomplete="off" required><small id="fromHint"></small></label>
+          <button class="swap-button" type="button" id="swapButton" aria-label="Swap origin and destination">⇄</button>
+          <label class="field"><span>TO</span><input id="toInput" list="stopOptions" placeholder="Choose an accessible stop" autocomplete="off" required><small id="toHint"></small></label>
+          <button class="plan-button" type="submit">Find my route <span>→</span></button>
+        </div>
+        <datalist id="stopOptions"></datalist>
+      </form>
+      <p class="data-note"><span>i</span> Using MTS GTFS wheelchair boarding data. Stops marked “unknown” are not included.</p>
+    </section>
+
+    <section class="alert-banner" aria-live="polite">
+      <div class="alert-icon">!</div>
+      <div><strong>Live accessibility alert</strong><p>Grossmont Station elevators are currently out of service.</p></div>
+      <button type="button" id="alertDetails">See alternative <span>→</span></button>
+    </section>
+
+    <section id="results" class="results" aria-live="polite">
+      <div class="section-heading"><div><p class="eyebrow">YOUR ACCESSIBLE OPTIONS</p><h2>Start with a trip you can trust.</h2></div><span id="resultCount" class="result-count"></span></div>
+      <div id="routeResults" class="route-results"></div>
+    </section>
+
+    <section class="how-it-works">
+      <p class="eyebrow">HOW WAYFINDER THINKS</p>
+      <div class="principles">
+        <article><span class="number">01</span><h3>Only confirmed access</h3><p>We use wheelchair boarding and station pathway data to remove uncertain stops from your options.</p></article>
+        <article><span class="number">02</span><h3>Reroute before you're stranded</h3><p>When an elevator or stop changes, we surface a practical alternative and explain why.</p></article>
+        <article><span class="number">03</span><h3>Plain language, always</h3><p>No transit jargon. Just the next step, the accessible entrance, and what changed.</p></article>
+      </div>
+    </section>
+  </main>
+  <footer><span class="brand"><span class="brand-mark">↗</span> wayfinder</span><span>Built for Hack for Humanity · San Diego</span><span>Data source: MTS GTFS</span></footer>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
