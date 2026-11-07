@@ -1,0 +1,73 @@
+{
+  "parsed_request": {
+    "from_text": "Geisel Library",
+    "to_text": "Old Town",
+    "max_grade": 0.04,
+    "avoid_unverified": false,
+    "ai_generated": true
+  },
+  "summary": { "duration_min": 34, "walk_m": 1180, "transfers": 0 },
+  "legs": [
+    {
+      "mode": "walk",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-117.2376, 32.8811],
+          [-117.2352, 32.8798],
+          [-117.2330, 32.8790],
+          [-117.23178, 32.87844]
+        ]
+      },
+      "distance_m": 680,
+      "duration_min": 10,
+      "warnings": [
+        { "type": "unverified", "message": "Sidewalk accessibility not verified for 80 m" }
+      ],
+      "steps": [
+        { "instruction": "Head southeast on Library Walk", "distance_m": 300 },
+        { "instruction": "Continue onto the ramp to UCSD Central Campus Station", "distance_m": 380 }
+      ]
+    },
+    {
+      "mode": "transit",
+      "route_short_name": "Blue",
+      "route_color": "0000FF",
+      "from_stop": { "stop_id": "77782", "name": "UCSD Central Campus Station", "wheelchair_boarding": 0 },
+      "to_stop": { "stop_id": "75042", "name": "Old Town Station", "wheelchair_boarding": 0 },
+      "duration_min": 20,
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-117.23178, 32.87844],
+          [-117.22982, 32.87425],
+          [-117.23039, 32.86697],
+          [-117.21407, 32.80586],
+          [-117.20613, 32.79006],
+          [-117.20506, 32.76991],
+          [-117.19949, 32.75491]
+        ]
+      }
+    },
+    {
+      "mode": "walk",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-117.19949, 32.75491],
+          [-117.1968, 32.7530],
+          [-117.1935, 32.7500]
+        ]
+      },
+      "distance_m": 500,
+      "duration_min": 4,
+      "warnings": [],
+      "steps": [
+        { "instruction": "Exit Old Town Station via the elevator to the street", "distance_m": 60 },
+        { "instruction": "Head southeast to your destination", "distance_m": 440 }
+      ]
+    }
+  ],
+  "rerouted": false,
+  "reroute": null
+}

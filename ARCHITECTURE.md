@@ -166,7 +166,8 @@ crossing the boundary stay the same.
 ```
 
 **Demo area bounding box (UCSD to Old Town along the Blue Line):** about
-`-117.245, 32.745, -117.195, 32.885`. Keeping the area this small means the
+`-117.245, 32.735, -117.180, 32.885` (in `shared/config.json`). It includes Washington St station, the
+alternative to Old Town. Keeping the area this small means the
 graph loads in seconds and the committed files stay small. Confirm the final
 bbox in `shared/config.json`.
 
@@ -219,6 +220,9 @@ Rules:
 > **This section is the frozen glue.** Change it only by following the rules in
 > [section 3](#boundaries-change-your-own-side-freely-dont-touch-the-glue).
 > `shared/types.ts` and `backend/contract.py` must always match it.
+
+**`shared/types.ts` is the exact definition**; the examples below are illustrations.
+`POST /demo/reset` is a demo-only helper outside the contract.
 
 Base URL comes from `VITE_API_URL`. Coordinates are **`[lon, lat]`**
 (GeoJSON). The frontend converts them to Leaflet's `[lat, lon]` only in
@@ -357,7 +361,9 @@ cost = length_m
 
 1. Find the **usable** Blue Line stops: `wheelchair_boarding != 2` and no
    active blocking closure. If a closure lists `alternative_stop_ids`, prefer
-   those stops.
+   those stops. **Note:** every Blue Line station in the feed has
+   `wheelchair_boarding = 0` (unknown). MTS trolley stations are accessible,
+   so 0 must count as usable here, or nothing routes.
 2. Board at the usable stop with the cheapest accessible walk from the start.
    Get off at the usable stop with the cheapest accessible walk to the
    destination.
@@ -409,7 +415,8 @@ to explain why.
 ├── shared/                   # FROZEN GLUE: types.ts, config.json, fixtures/, check_contract.py
 ├── frontend/                 # Zach (only src/api/client.ts touches the glue)
 ├── pipeline/                 # partner: fetch/, gemini/{client.py,prompts/}, build_db.py, schema.sql
-├── backend/                  # partner: main.py, router.py, explain.py, requirements.txt
+├── requirements.txt          # backend + pipeline deps (at the root, for Render)
+├── backend/                  # partner: main.py, router.py, explain.py
 │                             #   contract.py = the only file that touches the glue
 └── data/                     # app.db, walk_graph.graphml, demo_alerts/  (committed; small because of the bbox)
 ```
